@@ -1,0 +1,527 @@
+
+$bg-dark: #111d16;         // Verde bosque profundo (Fondo principal)
+$bg-secondary: #18291f;    // Verde pino oscuro (Secciones alternas)
+$card-bg: rgba(32, 53, 41, 0.72); // Fondo translúcido de tarjetas
+$card-border: rgba(138, 179, 148, 0.28);
+
+$accent-green: #52b788;    // Verde hoja viva
+$accent-gold: #e09f67;     // Tono tierra / dorado cálido (Botones y etiquetas)
+$text-light: #f1f7f3;      // Blanco suave
+$text-muted: #a3b8aa;      // Gris verdoso para subtítulos
+
+$danger: #e63946;
+$warning: #f4a261;
+$success: #40916c;
+
+$font-main: 'Inter', sans-serif;
+$font-title: 'Playfair Display', serif;
+$radius-lg: 20px;
+$radius-md: 12px;
+
+@mixin glass-card {
+  background: $card-bg;
+  backdrop-filter: blur(10px);
+  border: 1px solid $card-border;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: $font-main;
+  background-color: $bg-dark;
+  color: $text-light;
+  line-height: 1.6;
+}
+
+.container {
+  width: 90%;
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+.section {
+  padding: 4.5rem 0;
+
+  &--alt {
+    background-color: $bg-secondary;
+  }
+}
+
+.section-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 3rem auto;
+
+  .section-title {
+    font-family: $font-title;
+    font-size: 2.2rem;
+    margin-bottom: 0.75rem;
+    display: inline-block;
+    padding: 0.3rem 1.2rem;
+    border-left: 3px solid $accent-green;
+    border-right: 3px solid $accent-green;
+    border-radius: 8px;
+  }
+
+  p {
+    color: $text-muted;
+    font-size: 0.98rem;
+  }
+}
+
+//  NAVEGACIÓN (Navbar)
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(17, 29, 22, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid $card-border;
+  padding: 1rem 0;
+
+  &__content {
+    @include flex-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .logo {
+    font-size: 1.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: $text-light;
+
+    strong {
+      color: $accent-gold;
+    }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+
+    a {
+      color: $text-muted;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+
+      &:hover {
+        color: $accent-green;
+      }
+    }
+  }
+
+  .role-switcher {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: $text-muted;
+
+    select {
+      background: $bg-secondary;
+      color: $text-light;
+      border: 1px solid $accent-gold;
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+}
+
+//  BOTONES Y BADGES
+
+.btn {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+
+  &--primary {
+    background: linear-gradient(135deg, $accent-gold, #c87d45);
+    color: #111d16;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(224, 159, 103, 0.4);
+    }
+  }
+
+  &--outline {
+    background: transparent;
+    color: $text-light;
+    border: 1px solid $card-border;
+
+    &:hover {
+      border-color: $accent-green;
+      color: $accent-green;
+    }
+  }
+
+  &--small {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.82rem;
+  }
+
+  &--full {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.85rem;
+  background: rgba(82, 183, 136, 0.18);
+  color: $accent-green;
+  border: 1px solid $accent-green;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+//  SECCIÓN HERO
+
+.hero {
+  padding: 5rem 0 4rem 0;
+  background: radial-gradient(circle at top right, rgba(82, 183, 136, 0.15), transparent 60%);
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  &__text {
+    h1 {
+      font-family: $font-title;
+      font-size: 3rem;
+      line-height: 1.15;
+      margin-bottom: 1.2rem;
+    }
+
+    p {
+      color: $text-muted;
+      font-size: 1.05rem;
+      margin-bottom: 2rem;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  &__stats {
+    display: grid;
+    gap: 1.2rem;
+
+    .stat-card {
+      @include glass-card;
+      h3 {
+        font-size: 1.15rem;
+        margin: 0.4rem 0;
+        color: $accent-gold;
+      }
+      p {
+        font-size: 0.9rem;
+        color: $text-muted;
+      }
+    }
+  }
+}
+
+//  FILTROS Y GRILLA DE TARJETAS
+
+.filters-bar {
+  @include glass-card;
+  @include flex-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding: 1rem 1.5rem;
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    label {
+      font-size: 0.9rem;
+      color: $text-muted;
+    }
+
+    select {
+      background: $bg-dark;
+      color: $text-light;
+      border: 1px solid $card-border;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+    }
+  }
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.offer-card {
+  @include glass-card;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+
+  &:hover {
+    transform: translateY(-6px);
+    border-color: $accent-green;
+  }
+
+  &__header {
+    @include flex-between;
+    margin-bottom: 0.8rem;
+
+    .zone-tag {
+      font-size: 0.78rem;
+      color: $accent-gold;
+      background: rgba(224, 159, 103, 0.15);
+      padding: 0.25rem 0.7rem;
+      border-radius: 12px;
+    }
+
+    .status-tag {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 8px;
+      font-weight: 700;
+
+      &.activa { background: rgba(64, 145, 108, 0.25); color: #74c69d; }
+      &.agotada { background: rgba(230, 57, 70, 0.25); color: #ff758f; }
+    }
+  }
+
+  &__title {
+    font-family: $font-title;
+    font-size: 1.35rem;
+    margin-bottom: 0.4rem;
+  }
+
+  &__vendor {
+    font-size: 0.88rem;
+    color: $text-muted;
+    margin-bottom: 1rem;
+  }
+
+  &__details {
+    font-size: 0.85rem;
+    background: rgba(0, 0, 0, 0.22);
+    padding: 0.8rem;
+    border-radius: $radius-md;
+    margin-bottom: 1.2rem;
+
+    p {
+      margin-bottom: 0.3rem;
+      strong { color: $text-light; }
+    }
+  }
+
+  &__footer {
+    @include flex-between;
+    border-top: 1px solid $card-border;
+    padding-top: 1rem;
+
+    .price-box {
+      .old-price {
+        text-decoration: line-through;
+        color: $text-muted;
+        font-size: 0.85rem;
+        margin-right: 0.4rem;
+      }
+      .new-price {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: $accent-green;
+      }
+    }
+  }
+}
+
+// 8. PANEL DE GESTIÓN Y TABLAS
+.management-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 2rem;
+}
+
+.glass-panel {
+  @include glass-card;
+
+  h3 {
+    font-family: $font-title;
+    font-size: 1.4rem;
+    margin-bottom: 1.2rem;
+    color: $accent-gold;
+  }
+}
+
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: $text-muted;
+    margin-bottom: 0.35rem;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    background: rgba(17, 29, 22, 0.8);
+    border: 1px solid $card-border;
+    border-radius: 8px;
+    color: $text-light;
+    font-size: 0.92rem;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+
+  input { width: auto; margin-top: 0.25rem; }
+  label { font-size: 0.8rem; }
+}
+
+.table-header-actions {
+  @include flex-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+
+  th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid $card-border;
+  }
+
+  th {
+    color: $accent-gold;
+    font-weight: 600;
+  }
+}
+
+//  KPIs E INDICADORES DEL PILOTO
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+
+  .kpi-card {
+    @include glass-card;
+    text-align: center;
+
+    h4 {
+      font-size: 0.9rem;
+      color: $text-muted;
+      margin-bottom: 0.5rem;
+    }
+
+    .kpi-number {
+      display: block;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: $text-light;
+    }
+
+    small {
+      font-size: 0.78rem;
+      color: $text-muted;
+    }
+
+    &--highlight {
+      border-color: $accent-green;
+      .kpi-number { color: $accent-green; }
+    }
+  }
+}
+
+//  FOOTER
+.footer {
+  background: #0b140e;
+  padding: 3rem 0;
+  border-top: 1px solid $card-border;
+  font-size: 0.88rem;
+  color: $text-muted;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2rem;
+  }
+
+  h4 {
+    color: $text-light;
+    margin-bottom: 0.8rem;
+  }
+
+  &__limits {
+    padding-left: 1.2rem;
+    li { margin-bottom: 0.4rem; }
+  }
+}
+
+// Responsivo para celulares
+@media (max-width: 900px) {
+  .hero__grid, .management-grid, .kpi-grid, .footer__grid {
+    grid-template-columns: 1fr;
+  }
+}

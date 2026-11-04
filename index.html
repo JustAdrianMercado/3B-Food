@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoRescate Cbba | Gestión y Comercialización de Excedentes</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- BARRA DE NAVEGACIÓN Y CAMBIO DE PERFIL -->
+  <header class="navbar">
+    <div class="container navbar__content">
+      <div class="logo">
+        <span class="logo__icon">🌱</span>
+        <span class="logo__text">EcoRescate <strong>Cbba</strong></span>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#ofertas">Ofertas en Cbba</a>
+        <a href="#como-funciona">Cómo Funciona</a>
+        <a href="#panel-gestion">Panel Establecimiento</a>
+        <a href="#reportes">Indicadores Piloto</a>
+      </nav>
+
+      <!-- Selector interactivo de Rol (Consumidor / Establecimiento / Admin) -->
+      <div class="role-switcher">
+        <label for="perfil-select">Vista activa:</label>
+        <select id="perfil-select">
+          <option value="todos">Vista Completa (Demo)</option>
+          <option value="consumidor">Perfil: Consumidor</option>
+          <option value="establecimiento">Perfil: Establecimiento</option>
+          <option value="admin">Perfil: Administrador</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero__grid">
+      <div class="hero__text">
+        <span class="badge">Proyecto Piloto - Cochabamba</span>
+        <h1>Aprovecha alimentos aptos antes de su descarte</h1>
+        <p>
+          Conectamos restaurantes y supermercados de Cochabamba con consumidores para comercializar oportunamente excedentes alimentarios dentro de su vida útil.
+        </p>
+        <div class="hero__actions">
+          <a href="#ofertas" class="btn btn--primary">Ver Ofertas Disponibles</a>
+          <a href="#panel-gestion" class="btn btn--outline">Registrar Lote / Oferta</a>
+        </div>
+      </div>
+      <div class="hero__stats">
+        <div class="stat-card">
+          <span class="stat-card__icon">⏱️</span>
+          <h3>Identificación Oportuna</h3>
+          <p>Control de lotes por ingreso (PEPS) y por fecha límite de comercialización.</p>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__icon">📍</span>
+          <h3>Retiro en Local</h3>
+          <p>Consulta por zonas de Cochabamba, reserva en línea y retiro presencial confirmado.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 1: CATÁLOGO DE OFERTAS PARA CONSUMIDORES (Inspirada en 3idea.jpg) -->
+  <section id="ofertas" class="section vista-consumidor">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Ofertas de Excedentes en Cochabamba</h2>
+        <p>Alimentos aptos para el consumo con descuento definido por cada establecimiento. Retiro directo en el local.</p>
+      </div>
+
+      <!-- Filtros por Zona y Estado -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="filtro-zona">Filtrar por Zona:</label>
+          <select id="filtro-zona">
+            <option value="todas">Todas las zonas (Cercado)</option>
+            <option value="Tupuraya">Tupuraya / Queru Queru</option>
+            <option value="Cala Cala">Cala Cala / Av. América</option>
+            <option value="Centro">Centro Histórico / El Prado</option>
+            <option value="La Recoleta">La Recoleta</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filtro-tipo">Tipo de fecha límite:</label>
+          <select id="filtro-tipo">
+            <option value="todos">Todos los tipos</option>
+            <option value="Límite de oferta">Límite de oferta (Restaurantes)</option>
+            <option value="Consumo preferente">Consumo preferente</option>
+            <option value="Vencimiento próximo">Vencimiento próximo</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grilla de Tarjetas de Ofertas (Renderizada por JS) -->
+      <div id="contenedor-ofertas" class="cards-grid">
+        <!-- Se llena dinámicamente desde script.js -->
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 2: PANEL DEL ESTABLECIMIENTO (Inventario PEPS y Publicación) -->
+  <section id="panel-gestion" class="section section--alt vista-establecimiento">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Gestión de Inventario Perecedero y Lotes</h2>
+        <p>Visualización de existencias por orden PEPS (Fecha de Ingreso) y prioridad por Fecha Límite.</p>
+      </div>
+
+      <div class="management-grid">
+        <!-- Formulario para Registrar Nuevo Lote y Oferta -->
+        <div class="glass-panel">
+          <h3>Registrar Lote / Publicar Oferta</h3>
+          <form id="form-lote">
+            <div class="form-group">
+              <label>Nombre del Producto / Paquete *</label>
+              <input type="text" id="prod-nombre" placeholder="Ej. Pack Panadería del Día (6 u.)" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Establecimiento *</label>
+                <input type="text" id="prod-local" placeholder="Ej. Panadería San José" required>
+              </div>
+              <div class="form-group">
+                <label>Zona en Cbba *</label>
+                <select id="prod-zona" required>
+                  <option value="Tupuraya">Tupuraya / Queru Queru</option>
+                  <option value="Cala Cala">Cala Cala / Av. América</option>
+                  <option value="Centro">Centro Histórico / El Prado</option>
+                  <option value="La Recoleta">La Recoleta</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Cantidad *</label>
+                <input type="number" id="prod-cantidad" min="1" value="5" required>
+              </div>
+              <div class="form-group">
+                <label>Unidad de Medida *</label>
+                <select id="prod-unidad">
+                  <option value="porciones">Porciones / Packs</option>
+                  <option value="kg">Kilogramos (kg)</option>
+                  <option value="unidades">Unidades</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Precio Normal (Bs) *</label>
+                <input type="number" id="prod-precio-base" min="1" step="0.5" value="30" required>
+              </div>
+              <div class="form-group">
+                <label>Precio Oferta (Bs) *</label>
+                <input type="number" id="prod-precio-oferta" min="1" step="0.5" value="18" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Fecha de Ingreso (PEPS) *</label>
+                <input type="date" id="prod-ingreso" required>
+              </div>
+              <div class="form-group">
+                <label>Fecha Límite *</label>
+                <input type="date" id="prod-limite" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Categoría de Límite *</label>
+                <select id="prod-categoria-limite">
+                  <option value="Límite de oferta">Límite de oferta (Mismo día)</option>
+                  <option value="Consumo preferente">Consumo preferente</option>
+                  <option value="Vencimiento próximo">Vencimiento próximo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Horario de Retiro *</label>
+                <input type="text" id="prod-horario" placeholder="Ej. 19:30 a 21:30" required>
+              </div>
+            </div>
+            <div class="form-group checkbox-group">
+              <input type="checkbox" id="check-inocuidad" required>
+              <label for="check-inocuidad">Declaro que el alimento es apto para el consumo y cumple condiciones de conservación (Límite Cap. 6).</label>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full">Publicar Lote en Plataforma</button>
+          </form>
+        </div>
+
+        <div class="glass-panel">
+          <div class="table-header-actions">
+            <h3>Existencias y Alertas de Lotes</h3>
+            <div class="sort-buttons">
+              <button id="btn-sort-peps" class="btn btn--small btn--outline">Ordenar PEPS (Ingreso)</button>
+              <button id="btn-sort-limite" class="btn btn--small btn--primary">Priorizar Fecha Límite</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Lote</th>
+                  <th>Producto</th>
+                  <th>Cant.</th>
+                  <th>Ingreso (PEPS)</th>
+                  <th>Fecha Límite</th>
+                  <th>Alerta</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-lotes-body">
+                <!-- Se llena por JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 3: HISTORIAL DE RESERVAS, RETIROS E INDICADORES (Apartado 8.1 y 8.2) -->
+  <section id="reportes" class="section vista-admin">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Trazabilidad de Reservas e Indicadores del Piloto</h2>
+        <p>Confirmación manual de retiros en local y cálculo de proporción retirada en unidades comparables.</p>
+      </div>
+
+      <!-- KPIs de Evaluación Piloto -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <h4>Total Publicado</h4>
+          <span id="kpi-publicado" class="kpi-number">0</span>
+          <small>Unidades / Porciones ofertadas</small>
+        </div>
+        <div class="kpi-card">
+          <h4>Reservas Activas</h4>
+          <span id="kpi-reservado" class="kpi-number">0</span>
+          <small>Pendientes de retiro en local</small>
+        </div>
+        <div class="kpi-card">
+          <h4>Retiros Confirmados</h4>
+          <span id="kpi-retirado" class="kpi-number">0</span>
+          <small>Entregados efectivamente</small>
+        </div>
+        <div class="kpi-card kpi-card--highlight">
+          <h4>Proporción Retirada</h4>
+          <span id="kpi-proporcion" class="kpi-number">0%</span>
+          <small>(Retirado / Publicado) × 100</small>
+        </div>
+      </div>
+
+      <!-- Tabla de Historial y Confirmación Manual -->
+      <div class="glass-panel">
+        <h3>Control de Reservas y Confirmación Manual de Retiro</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código Reserva</th>
+                <th>Producto / Establecimiento</th>
+                <th>Cant. Reservada</th>
+                <th>Horario Límite</th>
+                <th>Estado</th>
+                <th>Acción del Establecimiento</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-reservas-body">
+              <!-- Se llena dinámicamente al reservar -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN DE LÍMITES DECLARADOS DEL PROYECTO (Apartado 6 del Informe UCB) -->
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div>
+        <h4>EcoRescate Cochabamba - Prototipo UCB</h4>
+        <p>Proyecto académico de Metodología de la Investigación - Carrera de Ingeniería de Sistemas.</p>
+        <p>Autores: Oliver Merida Carreño, Daniela Condori Bejarano, Adrian Mercado Alegre (2026).</p>
+      </div>
+      <div>
+        <h4>Delimitación y Condiciones de Uso (Cap. 6 Límites)</h4>
+        <ul class="footer__limits">
+          <li><strong>Retiro presencial:</strong> No incluye reparto a domicilio ni cobros bancarios integrados en esta versión.</li>
+          <li><strong>Responsabilidad sanitaria:</strong> La plataforma no certifica inocuidad; cada establecimiento respalda la aptitud y cadena de frío.</li>
+          <li><strong>Evaluación:</strong> Las cantidades retiradas son un indicador de uso de la plataforma durante el piloto.</li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script principal -->
+  <script src="js/script.js"></script>
+</body>
+</html>
