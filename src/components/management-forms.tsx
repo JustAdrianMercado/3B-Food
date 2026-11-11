@@ -2,24 +2,27 @@
 
 import { useState, type FormEvent } from "react";
 import { Check, Leaf, Save, Upload } from "lucide-react";
-import { CATEGORIES, DemoError, UNITS, fromLocalInput, localDate, localInput, money, type Category, type Lot, type Offer, type Unit } from "@/lib/domain";
-import { useDemo } from "./demo-provider";
+import { CATEGORIES, DomainError, UNITS, fromLocalInput, localDate, localInput, money, type Category, type Lot, type Offer, type Unit } from "@/lib/domain";
+import { useData } from "./data-provider";
 import { Dialog } from "./ui";
 
 export function PublishLotDialog({ establishmentId, onClose }: { establishmentId: string; onClose: () => void }) {
-  const { execute, notify } = useDemo();
+  const { execute, notify } = useData();
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [unit, setUnit] = useState<Unit>("unidades");
   const [defaults] = useState(() => {
     const now = Date.now();
     return { entry: localDate(now), start: localInput(now), end: localInput(now + 3 * 3_600_000), date: localDate(new Date(now + 3 * 3_600_000)) };
   });
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (busy) return;
     setError("");
     const data = new FormData(event.currentTarget);
+    setBusy(true);
     try {
-      const result = execute({ type: "publish", input: {
+      const result = await execute({ type: "publish", input: {
         establishmentId, name: String(data.get("name") ?? ""), description: String(data.get("description") ?? ""),
         category: data.get("category") as Category, quantity: Number(data.get("quantity")), unit,
         regularPrice: Number(data.get("regularPrice")), price: Number(data.get("price")),
@@ -30,7 +33,8 @@ export function PublishLotDialog({ establishmentId, onClose }: { establishmentId
       if (!result.ok) { setError(result.message); return; }
       notify("Lote registrado y oferta publicada. Ya puedes encontrarla en el catálogo.");
       onClose();
-    } catch (caught) { setError(caught instanceof DemoError ? caught.message : "Revisa los datos y las fechas antes de publicar."); }
+    } catch (caught) { setError(caught instanceof DomainError ? caught.message : "Revisa los datos y las fechas antes de publicar."); }
+    finally { setBusy(false); }
   };
   return <Dialog title="Dale otra oportunidad" description="Registra el lote y publica sus excedentes en una sola operación. Horarios de Cochabamba (UTC−4)." onClose={onClose} wide>
     <form onSubmit={submit}>
@@ -56,29 +60,34 @@ export function PublishLotDialog({ establishmentId, onClose }: { establishmentId
         <div className="field"><label htmlFor="lot-pickup-end">Fin del retiro *</label><input id="lot-pickup-end" name="pickupEnd" type="datetime-local" defaultValue={defaults.end} required /></div>
         <div className="field-full"><label className="declaration"><input type="checkbox" name="suitability" required /><span>Respaldo que el alimento es apto para el consumo, conserva las condiciones adecuadas y puede comercializarse dentro del plazo indicado. La plataforma no certifica su inocuidad. *</span></label></div>
       </div></div>
-      <div className="note-box"><Leaf size={17} /><span>Se utilizará una fotografía ilustrativa de la categoría. Esta publicación forma parte de la demostración y se guardará en tu navegador.</span></div>
-      <div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="btn btn-primary"><Upload size={16} />Registrar y publicar oferta</button></div>
+      <div className="note-box"><Leaf size={17} /><span>Se utilizará una fotografía ilustrativa de la categoría. La oferta aparecerá en el catálogo en cuanto la publiques.</span></div>
+      <div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="btn btn-primary" disabled={busy} aria-busy={busy}><Upload size={16} />{busy ? "Publicando…" : "Registrar y publicar oferta"}</button></div>
     </form>
   </Dialog>;
 }
 
-export function PriceDialog({ offer, establishmentId, onClose }: { offer: Offer; establishmentId: string; onClose: () => void }) {
-  const { execute, notify } = useDemo();
+export function PriceDialog({ offer, onClose }: { offer: Offer; onClose: () => void }) {
+  const { execute, notify } = useData();
   const [price, setPrice] = useState(String(offer.price));
   const [error, setError] = useState("");
-  return <Dialog title="Un mejor precio, a tiempo" description="El establecimiento decide el descuento. Las reservas ya registradas conservan su precio original." onClose={onClose}><form onSubmit={(event) => {
+  const [busy, setBusy] = useState(false);
+  return <Dialog title="Un mejor precio, a tiempo" description="El establecimiento decide el descuento. Las reservas ya registradas conservan su precio original." onClose={onClose}><form onSubmit={async (event) => {
     event.preventDefault();
-    const result = execute({ type: "price", offerId: offer.id, establishmentId, price: Number(price) });
+    if (busy) return;
+    setBusy(true);
+    const result = await execute({ type: "price", offerId: offer.id, price: Number(price) });
+    setBusy(false);
     if (!result.ok) { setError(result.message); return; }
     notify("Precio de oferta actualizado."); onClose();
-  }}>{error && <p role="alert" className="form-error">{error}</p>}<div className="field"><label htmlFor="edit-price">Nuevo precio de oferta (Bs)</label><input id="edit-price" autoFocus type="number" min="0.01" max={offer.regularPrice - 0.01} step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} required /><small>Precio habitual: {money(offer.regularPrice)} por unidad de medida.</small></div><div className="dialog-actions"><button className="btn btn-secondary" type="button" onClick={onClose}>Volver</button><button className="btn btn-primary" type="submit"><Save size={16} />Guardar precio</button></div></form></Dialog>;
+  }}>{error && <p role="alert" className="form-error">{error}</p>}<div className="field"><label htmlFor="edit-price">Nuevo precio de oferta (Bs)</label><input id="edit-price" autoFocus type="number" min="0.01" max={offer.regularPrice - 0.01} step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} required /><small>Precio habitual: {money(offer.regularPrice)} por unidad de medida.</small></div><div className="dialog-actions"><button className="btn btn-secondary" type="button" onClick={onClose}>Volver</button><button className="btn btn-primary" type="submit" disabled={busy}><Save size={16} />Guardar precio</button></div></form></Dialog>;
 }
 
 export function CollectDialog({ reservationId, onClose }: { reservationId: string; onClose: () => void }) {
-  const { state, execute, notify } = useDemo();
+  const { state, execute, notify } = useData();
+  const [busy, setBusy] = useState(false);
   const reservation = state?.reservations.find((item) => item.id === reservationId);
   if (!state || !reservation) return null;
   const offer = state.offers.find((item) => item.id === reservation.offerId)!;
   const lot = state.lots.find((item) => item.id === offer.lotId)!;
-  return <Dialog title="Confirma el retiro en el local" description="Verifica el código con la persona que retira. Solo confirma cuando hayas entregado el alimento." onClose={onClose}><div className="confirmation-summary"><h3>{lot.name}</h3><dl><div><dt>Código</dt><dd><b>{reservation.code}</b></dd></div><div><dt>Cantidad</dt><dd>{reservation.quantity} {lot.unit}</dd></div><div className="summary-total"><dt>Total acordado</dt><dd>{money(reservation.quantity * reservation.unitPrice)}</dd></div></dl></div><form onSubmit={(event) => { event.preventDefault(); const result = execute({ type: "collect", reservationId, establishmentId: state.selectedEstablishmentId }); if (result.ok) { notify("Retiro confirmado. El historial y los indicadores ya están actualizados."); onClose(); } else onClose(); }}><label className="declaration mt-5"><input type="checkbox" required /><span>Verifiqué la reserva y entregué la cantidad indicada en el establecimiento.</span></label><div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Volver</button><button type="submit" className="btn btn-primary"><Check size={17} />Confirmar retiro</button></div></form></Dialog>;
+  return <Dialog title="Confirma el retiro en el local" description="Verifica el código con la persona que retira. Solo confirma cuando hayas entregado el alimento." onClose={onClose}><div className="confirmation-summary"><h3>{lot.name}</h3><dl><div><dt>Código</dt><dd><b>{reservation.code}</b></dd></div>{reservation.customerName && <div><dt>Retira</dt><dd>{reservation.customerName}</dd></div>}<div><dt>Cantidad</dt><dd>{reservation.quantity} {lot.unit}</dd></div><div className="summary-total"><dt>Total acordado</dt><dd>{money(reservation.quantity * reservation.unitPrice)}</dd></div></dl></div><form onSubmit={async (event) => { event.preventDefault(); if (busy) return; setBusy(true); const result = await execute({ type: "collect", reservationId }); setBusy(false); if (result.ok) { notify("Retiro confirmado. El historial y los indicadores ya están actualizados."); onClose(); } else onClose(); }}><label className="declaration mt-5"><input type="checkbox" required /><span>Verifiqué la reserva y entregué la cantidad indicada en el establecimiento.</span></label><div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Volver</button><button type="submit" className="btn btn-primary" disabled={busy}><Check size={17} />Confirmar retiro</button></div></form></Dialog>;
 }

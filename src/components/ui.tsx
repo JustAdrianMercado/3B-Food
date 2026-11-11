@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowUpRight, Leaf, X, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Leaf, X } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -35,15 +35,11 @@ export function Dialog({ title, description, children, onClose, wide = false }: 
   return (
     <dialog ref={ref} className={cn("dialog", wide && "dialog--wide")} aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="dialog-content">
-        <div className="dialog-heading"><div><span className="eyebrow">ECORESCATE · DEMOSTRACIÓN</span><h2 id={titleId}>{title}</h2>{description && <p id={descriptionId}>{description}</p>}</div><button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar diálogo"><X size={21} /></button></div>
+        <div className="dialog-heading"><div><span className="eyebrow">ECORESCATE</span><h2 id={titleId}>{title}</h2>{description && <p id={descriptionId}>{description}</p>}</div><button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar diálogo"><X size={21} /></button></div>
         {children}
       </motion.div>
     </dialog>
   );
-}
-
-export function EmptyState({ icon: Icon = Leaf, title, description, action }: { icon?: LucideIcon; title: string; description: string; action?: ReactNode }) {
-  return <div className="empty-state"><span className="empty-icon"><Icon size={30} strokeWidth={1.5} /></span><h3>{title}</h3><p>{description}</p>{action}</div>;
 }
 
 export function LoadingCards({ count = 3 }: { count?: number }) {
@@ -54,5 +50,4 @@ export function PageHeading({ eyebrow, title, description, action }: { eyebrow: 
   return <div className="page-heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{description && <p>{description}</p>}</div>{action}</div>;
 }
 
-export function DemoBadge() { return <span className="demo-badge"><span />Demostración · Datos simulados</span>; }
 export function TextLink({ href, children }: { href: string; children: ReactNode }) { return <Link className="text-link" href={href}>{children}<ArrowUpRight size={17} /></Link>; }

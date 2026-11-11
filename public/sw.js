@@ -1,5 +1,5 @@
 /* Only static assets are cached. Navigation, personalized pages and APIs are never stored. */
-const CACHE = "ecorescate-static-v1";
+const CACHE = "ecorescate-static-v2";
 const OFFLINE = "/offline.html";
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll([OFFLINE, "/icon.svg", "/icons/icon-192.png"])).then(() => self.skipWaiting()));

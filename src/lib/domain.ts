@@ -4,21 +4,29 @@ export const UNITS = ["porciones", "unidades", "kg"] as const;
 export type Unit = (typeof UNITS)[number];
 export const CATEGORIES = ["Cocina del día", "Panadería", "Frutas y verduras", "Lácteos", "Despensa"] as const;
 export type Category = (typeof CATEGORIES)[number];
-export const ZONES = ["Tupuraya", "Cala Cala", "Centro", "La Recoleta"] as const;
+export const ZONES = ["Tupuraya", "Cala Cala", "Centro", "La Recoleta", "El Prado", "Queru Queru", "Sarco", "Muyurina"] as const;
 export const TIME_ZONE = "America/La_Paz";
-export const STORAGE_KEY = "ecorescate-demo-v1";
+
+/** Illustrative photo used for each category until offers support their own images. */
+export const categoryImages: Record<Category, string> = {
+  "Cocina del día": "/images/bowl.webp", "Panadería": "/images/bread.webp",
+  "Frutas y verduras": "/images/produce.webp", "Lácteos": "/images/yogurt.webp", "Despensa": "/images/pantry.webp",
+};
 
 export interface Establishment {
   id: string;
+  slug: string;
   name: string;
   type: "Restaurante" | "Supermercado";
   zone: string;
   address: string;
+  description: string;
+  openingHours: string;
   initials: string;
   color: string;
 }
 
-const lotSchema = z.object({
+export const lotSchema = z.object({
   id: z.string().min(1),
   establishmentId: z.string().min(1),
   name: z.string().min(1).max(100),
@@ -37,7 +45,7 @@ const lotSchema = z.object({
   suitabilityDeclared: z.literal(true),
 });
 
-const offerSchema = z.object({
+export const offerSchema = z.object({
   id: z.string().min(1),
   lotId: z.string().min(1),
   regularPrice: z.number().positive().finite(),
@@ -47,7 +55,7 @@ const offerSchema = z.object({
   paused: z.boolean(),
 });
 
-const reservationSchema = z.object({
+export const reservationSchema = z.object({
   id: z.string().min(1),
   code: z.string().min(1),
   offerId: z.string().min(1),
@@ -56,9 +64,12 @@ const reservationSchema = z.object({
   createdAt: z.string().datetime(),
   status: z.enum(["Reservada", "Retirada", "Cancelada", "No retirada"]),
   closedAt: z.string().datetime().nullable(),
+  customerName: z.string().nullable(),
+  /** True when the reservation belongs to the current visitor (never exposes the visitor token). */
+  mine: z.boolean(),
 });
 
-const movementSchema = z.object({
+export const movementSchema = z.object({
   id: z.string().min(1),
   lotId: z.string().min(1),
   reservationId: z.string().nullable(),
@@ -68,21 +79,21 @@ const movementSchema = z.object({
   detail: z.string(),
 });
 
-export const demoSchema = z.object({
-  version: z.literal(1),
-  startedAt: z.string().datetime(),
-  selectedEstablishmentId: z.string().min(1),
-  lots: z.array(lotSchema).max(500),
-  offers: z.array(offerSchema).max(500),
-  reservations: z.array(reservationSchema).max(3000),
-  movements: z.array(movementSchema).max(10000),
-});
 
 export type Lot = z.infer<typeof lotSchema>;
 export type Offer = z.infer<typeof offerSchema>;
 export type Reservation = z.infer<typeof reservationSchema>;
 export type Movement = z.infer<typeof movementSchema>;
-export type DemoState = z.infer<typeof demoSchema>;
+
+/** Everything a page needs, already filtered on the server for the current visitor and area. */
+export interface SiteState {
+  establishments: Establishment[];
+  selectedEstablishmentId: string;
+  lots: Lot[];
+  offers: Offer[];
+  reservations: Reservation[];
+  movements: Movement[];
+}
 export type OfferStatus = "Disponible" | "Agotada" | "Finalizada" | "Pausada";
 
 export interface OfferView {
@@ -110,20 +121,10 @@ export interface LotInput {
   suitabilityDeclared: boolean;
 }
 
-export type DemoAction =
-  | { type: "publish"; input: LotInput }
-  | { type: "reserve"; offerId: string; quantity: number }
-  | { type: "cancel"; reservationId: string }
-  | { type: "collect"; reservationId: string; establishmentId: string }
-  | { type: "price"; offerId: string; price: number; establishmentId: string }
-  | { type: "toggle-offer"; offerId: string; establishmentId: string }
-  | { type: "select-establishment"; establishmentId: string }
-  | { type: "expire" };
-
-export class DemoError extends Error {
+export class DomainError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "DemoError";
+    this.name = "DomainError";
   }
 }
 
@@ -175,7 +176,7 @@ export function remainingLabel(lot: Lot, now = Date.now()): string {
   return `Hasta el ${dateLabel(new Date(effectiveEnd(lot)).toISOString())}`;
 }
 
-export function getOfferViews(state: DemoState, establishments: readonly Establishment[]): OfferView[] {
+export function getOfferViews(state: SiteState, establishments: readonly Establishment[] = state.establishments): OfferView[] {
   return state.offers.flatMap((offer) => {
     const lot = state.lots.find((item) => item.id === offer.lotId);
     const establishment = establishments.find((item) => item.id === lot?.establishmentId);
@@ -183,24 +184,8 @@ export function getOfferViews(state: DemoState, establishments: readonly Establi
   });
 }
 
-const newId = (prefix: string) => `${prefix}-${globalThis.crypto.randomUUID()}`;
 function ensure(condition: unknown, message: string): asserts condition {
-  if (!condition) throw new DemoError(message);
-}
-
-function addMovement(
-  state: DemoState,
-  data: Omit<Movement, "id" | "createdAt">,
-  now: number,
-): void {
-  state.movements.unshift({ ...data, id: newId("mov"), createdAt: new Date(now).toISOString() });
-}
-
-function findOffer(state: DemoState, id: string) {
-  const offer = state.offers.find((item) => item.id === id);
-  const lot = state.lots.find((item) => item.id === offer?.lotId);
-  if (!offer || !lot) throw new DemoError("No encontramos esta oferta. Vuelve al catálogo.");
-  return { offer, lot };
+  if (!condition) throw new DomainError(message);
 }
 
 export function validateLot(input: LotInput, now = Date.now()): void {
@@ -225,126 +210,6 @@ export function validateLot(input: LotInput, now = Date.now()): void {
   ensure(input.suitabilityDeclared, "Debes respaldar la aptitud y las condiciones de conservación del alimento.");
 }
 
-/** Pure domain transition. The local demo deliberately makes no multi-user concurrency guarantee. */
-export function transition(state: DemoState, action: DemoAction, now = Date.now()): DemoState {
-  const next = structuredClone(state);
-  const timestamp = new Date(now).toISOString();
-
-  if (action.type === "select-establishment") {
-    next.selectedEstablishmentId = action.establishmentId;
-    return next;
-  }
-
-  if (action.type === "publish") {
-    const input = action.input;
-    validateLot(input, now);
-    const lot: Lot = {
-      id: newId("lot"), establishmentId: input.establishmentId,
-      name: input.name.trim(), description: input.description.trim(), category: input.category,
-      unit: input.unit, initialQuantity: quantity(input.quantity), availableQuantity: quantity(input.quantity),
-      entryAt: input.entryAt, dateType: input.dateType, foodDate: input.foodDate,
-      commercializationEndsAt: input.commercializationEndsAt, pickupStartsAt: input.pickupStartsAt,
-      pickupEndsAt: input.pickupEndsAt, alertMinutes: input.alertMinutes, suitabilityDeclared: true,
-    };
-    const imageByCategory: Record<Category, string> = {
-      "Cocina del día": "/images/bowl.webp", "Panadería": "/images/bread.webp",
-      "Frutas y verduras": "/images/produce.webp", "Lácteos": "/images/yogurt.webp", "Despensa": "/images/pantry.webp",
-    };
-    next.lots.unshift(lot);
-    next.offers.unshift({ id: newId("offer"), lotId: lot.id, regularPrice: input.regularPrice, price: input.price, image: imageByCategory[input.category], publishedAt: timestamp, paused: false });
-    addMovement(next, { lotId: lot.id, reservationId: null, type: "Publicación", quantity: lot.initialQuantity, detail: `Se publicó ${lot.name}.` }, now);
-    return next;
-  }
-
-  if (action.type === "reserve") {
-    const { offer, lot } = findOffer(next, action.offerId);
-    ensure(offerStatus(offer, lot, now) === "Disponible", "Esta oferta ya no está disponible.");
-    ensure(Number.isFinite(action.quantity) && action.quantity > 0, "Selecciona una cantidad mayor que cero.");
-    ensure(lot.unit === "kg" || Number.isInteger(action.quantity), "Selecciona una cantidad entera.");
-    const amount = quantity(action.quantity);
-    ensure(amount > 0 && amount <= lot.availableQuantity, "No hay existencias suficientes para esa cantidad.");
-    lot.availableQuantity = quantity(lot.availableQuantity - amount);
-    let code: string;
-    do { code = `ECO-${globalThis.crypto.randomUUID().slice(0, 6).toUpperCase()}`; }
-    while (next.reservations.some((item) => item.code === code));
-    const reservation: Reservation = { id: newId("res"), code, offerId: offer.id, quantity: amount, unitPrice: offer.price, createdAt: timestamp, status: "Reservada", closedAt: null };
-    next.reservations.unshift(reservation);
-    addMovement(next, { lotId: lot.id, reservationId: reservation.id, type: "Reserva", quantity: amount, detail: `Reserva ${code} registrada.` }, now);
-    return next;
-  }
-
-  if (action.type === "price" || action.type === "toggle-offer") {
-    const { offer, lot } = findOffer(next, action.offerId);
-    ensure(lot.establishmentId === action.establishmentId, "Esta oferta pertenece a otro establecimiento.");
-    ensure(now < effectiveEnd(lot), "El plazo de esta oferta ya finalizó.");
-    if (action.type === "price") {
-      ensure(Number.isFinite(action.price) && action.price > 0 && action.price < offer.regularPrice, "El nuevo precio debe ser positivo y menor al precio habitual.");
-      offer.price = Math.round(action.price * 100) / 100;
-      addMovement(next, { lotId: lot.id, reservationId: null, type: "Cambio de precio", quantity: 0, detail: `Precio actualizado a ${money(offer.price)}. Las reservas existentes conservan su precio.` }, now);
-    } else {
-      offer.paused = !offer.paused;
-    }
-    return next;
-  }
-
-  if (action.type === "expire") {
-    let changed = false;
-    for (const reservation of next.reservations) {
-      if (reservation.status !== "Reservada") continue;
-      const { lot } = findOffer(next, reservation.offerId);
-      if (now < effectiveEnd(lot)) continue;
-      reservation.status = "No retirada";
-      reservation.closedAt = timestamp;
-      lot.availableQuantity = quantity(lot.availableQuantity + reservation.quantity);
-      addMovement(next, { lotId: lot.id, reservationId: reservation.id, type: "Plazo finalizado", quantity: reservation.quantity, detail: `La reserva ${reservation.code} terminó sin retiro. La oferta permanece cerrada.` }, now);
-      changed = true;
-    }
-    return changed ? next : state;
-  }
-
-  const reservation = next.reservations.find((item) => item.id === action.reservationId);
-  ensure(reservation, "No encontramos esta reserva.");
-  ensure(reservation.status === "Reservada", "Esta reserva ya está cerrada y no puede procesarse de nuevo.");
-  const { lot } = findOffer(next, reservation.offerId);
-  if (action.type === "collect") {
-    ensure(lot.establishmentId === action.establishmentId, "La reserva pertenece a otro establecimiento.");
-    ensure(now >= Date.parse(lot.pickupStartsAt), "El horario de retiro todavía no comenzó.");
-    ensure(now < effectiveEnd(lot), "El plazo de retiro ya finalizó.");
-    reservation.status = "Retirada";
-    reservation.closedAt = timestamp;
-    addMovement(next, { lotId: lot.id, reservationId: reservation.id, type: "Retiro", quantity: reservation.quantity, detail: `Retiro ${reservation.code} confirmado manualmente.` }, now);
-  } else {
-    reservation.status = "Cancelada";
-    reservation.closedAt = timestamp;
-    lot.availableQuantity = quantity(lot.availableQuantity + reservation.quantity);
-    addMovement(next, { lotId: lot.id, reservationId: reservation.id, type: "Cancelación", quantity: reservation.quantity, detail: `Reserva ${reservation.code} cancelada.${now >= effectiveEnd(lot) ? " El plazo de la oferta ya terminó." : " Cantidad liberada."}` }, now);
-  }
-  return next;
-}
-
-export function parsePersistedState(raw: string, establishmentIds: readonly string[]): DemoState | null {
-  try {
-    const result = demoSchema.safeParse(JSON.parse(raw));
-    if (!result.success) return null;
-    const state = result.data;
-    if (!establishmentIds.includes(state.selectedEstablishmentId)) return null;
-    if (new Set(state.lots.map((item) => item.id)).size !== state.lots.length || new Set(state.offers.map((item) => item.id)).size !== state.offers.length || new Set(state.reservations.map((item) => item.id)).size !== state.reservations.length || new Set(state.reservations.map((item) => item.code)).size !== state.reservations.length) return null;
-    for (const lot of state.lots) {
-      if (!establishmentIds.includes(lot.establishmentId) || lot.availableQuantity > lot.initialQuantity || !Number.isFinite(foodDateEnd(lot.foodDate)) || (lot.unit !== "kg" && (!Number.isInteger(lot.initialQuantity) || !Number.isInteger(lot.availableQuantity)))) return null;
-    }
-    if (new Set(state.offers.map((item) => item.lotId)).size !== state.offers.length) return null;
-    if (state.offers.some((offer) => !state.lots.some((lot) => lot.id === offer.lotId) || offer.price >= offer.regularPrice)) return null;
-    if (state.reservations.some((reservation) => !state.offers.some((offer) => offer.id === reservation.offerId))) return null;
-    if (state.movements.some((movement) => !state.lots.some((lot) => lot.id === movement.lotId))) return null;
-    for (const lot of state.lots) {
-      const offer = state.offers.find((item) => item.lotId === lot.id);
-      const consumed = state.reservations.filter((item) => item.offerId === offer?.id && (item.status === "Reservada" || item.status === "Retirada")).reduce((total, item) => total + item.quantity, 0);
-      if (Math.abs(quantity(consumed + lot.availableQuantity) - lot.initialQuantity) > 0.001) return null;
-    }
-    return state;
-  } catch { return null; }
-}
-
 export interface UnitMetrics {
   unit: Unit;
   published: number;
@@ -355,7 +220,7 @@ export interface UnitMetrics {
   proportion: number;
 }
 
-export function getMetrics(state: DemoState, options: { establishmentId?: string; since?: number } = {}): UnitMetrics[] {
+export function getMetrics(state: SiteState, options: { establishmentId?: string; since?: number } = {}): UnitMetrics[] {
   const lots = state.lots.filter((lot) => !options.establishmentId || lot.establishmentId === options.establishmentId);
   const offers = state.offers.filter((offer) => lots.some((lot) => lot.id === offer.lotId) && (!options.since || Date.parse(offer.publishedAt) >= options.since));
   return UNITS.map((unit) => {
@@ -372,9 +237,8 @@ export function getMetrics(state: DemoState, options: { establishmentId?: string
 export function reportCsv(metrics: UnitMetrics[], label: string, generatedAt = new Date().toISOString()): string {
   const escape = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
   return "\uFEFF" + [
-    ["EcoRescate - DEMOSTRACIÓN - Datos simulados", label, generatedAt],
+    ["EcoRescate - Reporte de aprovechamiento", label, generatedAt],
     ["Unidad", "Publicado", "Reserva pendiente", "Retirado", "Cancelado", "No retirado", "Proporción retirada (%)"],
     ...metrics.map((item) => [item.unit, item.published, item.reserved, item.collected, item.cancelled, item.uncollected, item.proportion]),
-    ["Las cifras muestran operaciones simuladas. No demuestran reducción de desperdicio."],
   ].map((row) => row.map(escape).join(";")).join("\r\n");
 }

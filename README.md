@@ -1,89 +1,75 @@
 # EcoRescate Cochabamba
 
-Demostración académica del segundo entregable de **Metodología de la Investigación**, Ingeniería de Sistemas. Ilustra una propuesta para identificar, gestionar y comercializar oportunamente excedentes alimentarios aptos para el consumo en restaurantes y supermercados participantes de Cochabamba.
+Sitio web para encontrar, reservar y retirar excedentes alimentarios aptos para el consumo de restaurantes y supermercados de Cochabamba, y panel para que los establecimientos gestionen sus lotes, ofertas y entregas.
 
-**La entrega del jueves 12 de noviembre de 2026 es una demo interactiva.** Los establecimientos son ficticios, los datos se guardan en este navegador y los indicadores no constituyen resultados de campo. No se requiere una cuenta, una base de datos ni variables de entorno.
+## Stack
 
-## Ejecutar
+- **Next.js 16** (App Router, Server Actions), **React 19**, **TypeScript**, Tailwind CSS 4, Motion.
+- **Supabase (Postgres)** provisionado con la integración de Vercel Marketplace. Toda lectura y escritura pasa por el servidor con la clave de servicio; las tablas tienen RLS sin políticas y las funciones no son ejecutables con la clave pública.
+- Reglas de negocio transaccionales en SQL (`supabase/migrations`): reservar, cancelar, confirmar retiro, vencer reservas, publicar, cambiar precio y pausar, con bloqueo de filas para evitar sobre-reservas.
+- Pruebas: `node:test` (dominio y reglas de la base de datos) y Playwright con axe (recorridos y accesibilidad).
 
-Requisito: Node.js 22 o posterior.
+## Estructura del sitio
+
+| Área | Rutas |
+| --- | --- |
+| Público | `/`, `/ofertas`, `/ofertas/[id]`, `/establecimientos`, `/establecimientos/[slug]`, `/como-funciona`, `/negocios`, `/negocios/unirse`, `/nosotros`, `/preguntas-frecuentes`, `/contacto`, `/mis-reservas` |
+| Establecimientos | `/panel`, `/panel/inventario`, `/panel/reservas`, `/panel/indicadores` |
+| Administración (sin enlace público) | `/admin`, `/admin/solicitudes`, `/admin/mensajes` |
+
+«Mis reservas» identifica a cada visitante con una cookie anónima (`eco_cid`); el establecimiento seleccionado en el panel se guarda en `eco_panel_est`.
+
+> **Todavía no hay autenticación.** Cualquiera que conozca la URL puede usar `/panel` y `/admin`. Mantén la URL privada hasta incorporar cuentas y permisos por establecimiento.
+
+## Configuración local
+
+Requisitos: Node.js 22 o posterior y acceso al proyecto de Vercel.
 
 ```bash
 npm ci
+vercel link                      # una vez
+vercel env pull .env.local --yes # variables de Supabase
+npm run db:migrate               # crea o actualiza el esquema
+npm run db:seed                  # carga datos de ejemplo (reemplaza ofertas y reservas)
 npm run dev
 ```
 
-Abrir **http://localhost:3000**. En PowerShell, si la política bloquea `npm.ps1`, utilizar `npm.cmd ci` y `npm.cmd run dev`.
+Abrir **http://localhost:3000**. En PowerShell, si la política bloquea `npm.ps1`, usar `npm.cmd`.
 
-Para la exposición, utilizar la compilación optimizada:
+Variables usadas: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (o `SUPABASE_SECRET_KEY`) para la app y `POSTGRES_URL_NON_POOLING` para los scripts. Opcional: `NEXT_PUBLIC_SITE_URL` para el sitemap y las URL de Open Graph (por defecto se usa el dominio de producción de Vercel).
 
-```bash
-npm run build
-npm start
-```
+## Scripts
 
-El modo de producción habilita el service worker de la PWA. Las fotografías y las fuentes están incluidas y se sirven localmente. La aplicación necesita conexión con su servidor; la pantalla sin conexión explica cómo volver a entrar. En un teléfono, la instalación PWA exige HTTPS; `localhost` se considera seguro en el mismo equipo. Una IP de la red local mediante HTTP permite probar el diseño, pero no garantiza instalación o acceso al portapapeles.
+| Comando | Qué hace |
+| --- | --- |
+| `npm run dev` / `build` / `start` | Desarrollo, compilación y servidor de producción |
+| `npm run typecheck`, `npm run lint` | Verificación de tipos y estilo |
+| `npm test` | Reglas de dominio (sin base de datos) |
+| `npm run test:db` | Reglas SQL contra Supabase; cada prueba se revierte |
+| `npm run test:e2e` | Playwright; requiere `npm run build` antes |
+| `npm run db:migrate` | Aplica las migraciones pendientes de `supabase/migrations` |
+| `npm run db:seed` | Reemplaza establecimientos, ofertas, reservas e historial con datos de ejemplo |
 
-## Recorrido de demostración
+> **Importante:** la integración conectó la misma base de datos a desarrollo, preview y producción. `npm run db:seed` y `npm run test:e2e` (que vuelve a cargar los datos de ejemplo) **reemplazan los datos reales**. Antes de recibir usuarios reales, crea una base separada para desarrollo o ejecuta las pruebas E2E con `E2E_RESEED=0`.
 
-1. Abrir el inicio y usar **Restablecer demo**, en el pie de página, para generar ejemplos con fechas vigentes.
-2. Entrar a **Mi negocio / Establecimiento · demo**, publicar un lote y revisar sus existencias.
-3. Ir a **Explorar ofertas**, encontrar el producto y reservar una cantidad.
-4. Abrir **Mis reservas**, comprobar el código y recargar: la reserva se conserva.
-5. Volver al panel del establecimiento, abrir **Reservas y retiros** y confirmar manualmente la entrega durante el horario configurado.
-6. Consultar **Mis indicadores** o **Administrador · demo** y exportar el resumen CSV.
-7. Mostrar **El proyecto** para explicar la relación con la investigación, los límites y las próximas etapas.
-
-Los registros iniciales incluyen reservas y retiros de ejemplo. Todos pertenecen a una cuenta ficticia de demostración. El selector cambia de vista y no representa autenticación ni autorización real.
-
-## Funciones incluidas
-
-- Next.js App Router, TypeScript, Tailwind CSS y Motion para React.
-- Diseño para móvil, tablet y escritorio, navegación táctil, diálogos nativos con control de foco y movimiento reducido.
-- Búsqueda por producto/establecimiento, categoría, zona registrada, precio publicado, descuento y plazo.
-- Lotes con ingreso PEPS, fecha alimentaria, límite comercial, ventana de retiro y alertas configurables en el panel.
-- Publicación, modificación de precio y pausa/reactivación de ofertas vigentes.
-- Reserva, cancelación, confirmación manual de retiro e historial de movimientos.
-- Cantidades enteras para unidades y porciones; decimales para kg.
-- Indicadores separados por unidad de medida, filtros por establecimiento/período y exportación CSV.
-- Persistencia local validada, recuperación de datos incompatibles y restablecimiento de ejemplos.
-- Manifiesto PWA, iconos y pantalla informativa sin conexión. El service worker no guarda páginas de usuario ni APIs.
-
-## Verificar
-
-```bash
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npm run test:e2e
-```
-
-Playwright utiliza Microsoft Edge si está instalado en su ruta habitual de Windows. En otro equipo, ejecutar una vez `npx playwright install chromium`, o indicar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Las pruebas E2E inician la compilación de producción en el puerto 3100; requieren ejecutar `npm run build` antes. Se puede usar un servidor existente con `PLAYWRIGHT_BASE_URL`.
-
-El script `node scripts/review-ui.mjs` genera capturas locales en `tmp/qa` de un servidor en el puerto 3000. Esa carpeta y los reportes de pruebas están excluidos de Git.
+Playwright usa Microsoft Edge si está instalado en su ruta habitual de Windows. En otro equipo, ejecutar `npx playwright install chromium` o definir `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
 ## Organización
 
 ```text
-src/app/          Rutas, metadatos y estilos de la aplicación
-src/components/  Interfaz, formularios y proveedor de la demo
-src/lib/         Modelo, reglas de negocio, datos ficticios y utilidades
-public/          Fotografías locales, iconos y soporte PWA
-tests/           Pruebas del dominio y recorridos de navegador
-docs/            Investigación, trazabilidad, protocolo y guion de exposición
-scripts/         Herramientas de imágenes, iconos y revisión visual
-legacy/          Prototipo HTML/CSS/JS original, conservado como referencia
+src/app/(sitio)/   Páginas públicas (cabecera y pie de página)
+src/app/(panel)/   Panel de establecimientos y administración
+src/components/    Interfaz y formularios
+src/lib/domain.ts  Tipos, validaciones e indicadores
+src/lib/actions.ts Server Actions (todas las escrituras)
+src/lib/db/        Cliente de Supabase solo para servidor y consultas
+supabase/          Migraciones SQL
+scripts/           Migración, datos de ejemplo y utilidades
+tests/             Pruebas de dominio, base de datos y navegador
+docs/              Material de investigación del proyecto
+legacy/            Prototipo HTML/CSS/JS original
 ```
 
-## Decisiones y límites
+## Políticas del servicio
 
-Cada lote de excedente se publica una sola vez y tiene una oferta en esta versión. El total publicado es su cantidad inicial; reservar descuenta existencias, retirar confirma la reserva sin descontar de nuevo, y cancelar libera la cantidad una sola vez. Terminar el plazo no reactiva ofertas. Un cambio de precio no modifica reservas anteriores.
-
-Los reportes seleccionan ofertas por fecha de publicación y muestran el estado actual de sus reservas. La proporción retirada se calcula por unidad homogénea: `(retirado / publicado) × 100`. No equivale a una reducción medida del desperdicio.
-
-Fechas y horarios se interpretan para `America/La_Paz` (UTC−4). Las alertas se actualizan al abrir el panel y mientras está abierto; no son notificaciones push. La consulta por ubicación utiliza zonas y direcciones de ejemplo; no determina la ubicación GPS ni calcula distancias.
-
-La persistencia local no es una base de datos multiusuario ni garantiza transacciones entre pestañas o dispositivos. Para el piloto real se contempla Supabase, autenticación, permisos por establecimiento, reservas transaccionales y mediciones con participantes voluntarios. No se procesan pagos ni se gestiona reparto; el oferente respalda la aptitud alimentaria y la plataforma no certifica inocuidad.
-
-Documentación para la entrega: [guion](docs/guion-exposicion.md), [trazabilidad](docs/trazabilidad.md), [protocolo del piloto](docs/protocolo-piloto.md) y [base conceptual](docs/base-conceptual.md). Fotografías y licencias: [créditos](docs/creditos-imagenes.md).
+El retiro es presencial y el pago se acuerda con el establecimiento; EcoRescate no procesa pagos ni gestiona envíos. Cada establecimiento respalda la aptitud para el consumo de lo que publica, y no se publican productos vencidos ni ofertas fuera de plazo. Fotografías y licencias: [créditos](docs/creditos-imagenes.md).

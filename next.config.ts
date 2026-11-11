@@ -4,6 +4,15 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   turbopack: { root: process.cwd() },
+  async redirects() {
+    return [
+      { source: "/establecimiento", destination: "/panel", permanent: true },
+      { source: "/establecimiento/inventario", destination: "/panel/inventario", permanent: true },
+      { source: "/establecimiento/reservas", destination: "/panel/reservas", permanent: true },
+      { source: "/establecimiento/reportes", destination: "/panel/indicadores", permanent: true },
+      { source: "/proyecto", destination: "/", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

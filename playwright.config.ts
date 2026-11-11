@@ -7,6 +7,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3100";
 
 export default defineConfig({
   testDir: "./tests/e2e", fullyParallel: false, workers: 2,
+  globalSetup: "./tests/e2e/global-setup.ts", globalTeardown: "./tests/e2e/global-teardown.ts",
   timeout: 60000, expect: { timeout: 10000 },
   reporter: [["list"], ["html", { open: "never" }]],
   use: { baseURL, viewport: { width: 1440, height: 1000 }, launchOptions: { executablePath }, screenshot: "only-on-failure", trace: "retain-on-failure", reducedMotion: "reduce" },
