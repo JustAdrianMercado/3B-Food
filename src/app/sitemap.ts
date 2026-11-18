@@ -3,7 +3,7 @@ import { offerStatus } from "@/lib/domain";
 import { loadState } from "@/lib/db/queries";
 import { siteUrl } from "@/lib/site";
 
-const staticPages = ["/", "/ofertas", "/establecimientos", "/como-funciona", "/negocios", "/negocios/unirse", "/nosotros", "/preguntas-frecuentes", "/contacto"];
+const staticPages = ["/", "/ofertas", "/establecimientos", "/como-funciona", "/negocios", "/negocios/unirse", "/nosotros", "/preguntas-frecuentes", "/contacto", "/ingresar", "/registro"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();

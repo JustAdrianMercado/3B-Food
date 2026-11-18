@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight, Check, Compass, Download, Leaf, Menu, ShoppingBag, Store, X } from "lucide-react";
+import { ArrowRight, BarChart3, Check, Compass, Download, LayoutDashboard, Leaf, Menu, ShoppingBag, Store, UserRound, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Brand, Dialog } from "./ui";
 import { useData } from "./data-provider";
+import { AccountMenu, LogoutButton, accountInitials, accountLinks } from "./account-menu";
+import { roleLabel } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 
 interface InstallEvent extends Event {
@@ -27,7 +29,12 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { state } = useData();
   const [open, setOpen] = useState(false);
+  const viewer = state?.viewer ?? null;
   const pending = state?.reservations.filter((item) => item.mine && item.status === "Reservada").length ?? 0;
+  const primary = !viewer || viewer.role === "consumidor"
+    ? { href: "/mis-reservas", label: "Mis reservas", icon: ShoppingBag }
+    : viewer.role === "establecimiento" ? { href: "/panel", label: "Mi panel", icon: LayoutDashboard } : { href: "/admin", label: "Administración", icon: BarChart3 };
+  const mobileLinks = [...mainLinks, { href: "/nosotros", label: "Nosotros" }, { href: "/preguntas-frecuentes", label: "Preguntas frecuentes" }, { href: "/contacto", label: "Contacto" }];
   return <>
     <div className="announcement"><Leaf size={13} /><span>La buena comida merece otra oportunidad.</span><span className="announcement-separator">·</span><span className="announcement-local">De Cochabamba, para Cochabamba</span></div>
     <header className="site-header">
@@ -35,13 +42,21 @@ export function SiteHeader() {
         <Brand />
         <nav className="desktop-nav" aria-label="Navegación principal">{mainLinks.map((link) => <Link key={link.href} href={link.href} className={cn(isActive(pathname, link.href) && "active")} aria-current={isActive(pathname, link.href) ? "page" : undefined}>{link.label}</Link>)}</nav>
         <div className="header-actions">
-          <Link href="/mis-reservas" className="reservation-link"><ShoppingBag size={19} /><span>Mis reservas</span>{pending > 0 && <b>{pending}</b>}</Link>
+          {viewer ? <>
+            <Link href={primary.href} className="reservation-link"><primary.icon size={19} /><span>{primary.label}</span>{viewer.role === "consumidor" && pending > 0 && <b>{pending}</b>}</Link>
+            <AccountMenu viewer={viewer} />
+          </> : <Link href={`/ingresar${pathname && pathname !== "/" && !pathname.startsWith("/ingresar") && !pathname.startsWith("/registro") ? `?next=${encodeURIComponent(pathname)}` : ""}`} className="reservation-link login-link"><UserRound size={19} /><span>Ingresar</span></Link>}
           <button className="icon-button mobile-menu-toggle" aria-label={open ? "Cerrar menú" : "Abrir menú"} aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((value) => !value)}>{open ? <X size={23} /> : <Menu size={23} />}</button>
         </div>
       </div>
-      <AnimatePresence>{open && <motion.nav initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mobile-menu" id="mobile-menu" aria-label="Menú móvil">{[...mainLinks, { href: "/nosotros", label: "Nosotros" }, { href: "/preguntas-frecuentes", label: "Preguntas frecuentes" }, { href: "/contacto", label: "Contacto" }, { href: "/panel", label: "Acceso para negocios" }].map((link) => <Link onClick={() => setOpen(false)} href={link.href} key={link.href}>{link.label}<ArrowRight size={17} /></Link>)}</motion.nav>}</AnimatePresence>
+      <AnimatePresence>{open && <motion.nav initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mobile-menu" id="mobile-menu" aria-label="Menú móvil">
+        {viewer && <div className="mobile-account"><span className="account-avatar" aria-hidden="true">{accountInitials(viewer.name)}</span><span><b>{viewer.name}</b><small>{roleLabel[viewer.role]}</small></span></div>}
+        {viewer && accountLinks(viewer).map((link) => <Link onClick={() => setOpen(false)} href={link.href} key={link.href}>{link.label}<ArrowRight size={17} /></Link>)}
+        {mobileLinks.map((link) => <Link onClick={() => setOpen(false)} href={link.href} key={link.href}>{link.label}<ArrowRight size={17} /></Link>)}
+        {viewer ? <LogoutButton className="mobile-logout" /> : <><Link onClick={() => setOpen(false)} href="/ingresar">Ingresar<ArrowRight size={17} /></Link><Link onClick={() => setOpen(false)} href="/registro">Crear cuenta<ArrowRight size={17} /></Link></>}
+      </motion.nav>}</AnimatePresence>
     </header>
-    <nav className="mobile-bottom-nav" aria-label="Accesos rápidos"><Link href="/ofertas" className={pathname.startsWith("/ofertas") || pathname === "/" ? "active" : ""}><Compass size={20} />Explorar</Link><Link href="/establecimientos" className={pathname.startsWith("/establecimientos") ? "active" : ""}><Store size={20} />Locales</Link><Link href="/mis-reservas" className={pathname === "/mis-reservas" ? "active" : ""}><ShoppingBag size={20} />Mis reservas{pending > 0 && <span className="bottom-count">{pending}</span>}</Link></nav>
+    <nav className="mobile-bottom-nav" aria-label="Accesos rápidos"><Link href="/ofertas" className={pathname.startsWith("/ofertas") || pathname === "/" ? "active" : ""}><Compass size={20} />Explorar</Link><Link href="/establecimientos" className={pathname.startsWith("/establecimientos") ? "active" : ""}><Store size={20} />Locales</Link><Link href={primary.href} className={pathname === primary.href ? "active" : ""}><primary.icon size={20} />{primary.label}{viewer?.role === "consumidor" && pending > 0 && <span className="bottom-count">{pending}</span>}</Link></nav>
   </>;
 }
 
@@ -70,7 +85,7 @@ export function SiteFooter() {
       <div className="footer-top">
         <div className="footer-brand"><Brand light /><p>Más oportunidades para la comida.<br />Más posibilidades para nuestra ciudad.</p></div>
         <div className="footer-links"><h3>Descubre</h3><Link href="/ofertas">Ofertas cerca de ti</Link><Link href="/establecimientos">Establecimientos</Link><Link href="/como-funciona">Cómo funciona</Link><Link href="/mis-reservas">Mis reservas</Link></div>
-        <div className="footer-links"><h3>Negocios</h3><Link href="/negocios">Para negocios</Link><Link href="/negocios/unirse">Quiero unirme</Link><Link href="/panel">Acceso al panel</Link></div>
+        <div className="footer-links"><h3>Negocios</h3><Link href="/negocios">Para negocios</Link><Link href="/negocios/unirse">Registrar mi negocio</Link><Link href="/ingresar?next=%2Fpanel">Acceso al panel</Link></div>
         <div className="footer-links"><h3>EcoRescate</h3><Link href="/nosotros">Nosotros</Link><Link href="/preguntas-frecuentes">Preguntas frecuentes</Link><Link href="/contacto">Contacto</Link><button onClick={install} className="footer-button" disabled={installed}>{installed ? <Check size={14} /> : <Download size={14} />}{installed ? "App instalada" : "Instalar aplicación"}</button></div>
       </div>
       <div className="footer-bottom"><span>© {new Date().getFullYear()} EcoRescate Cochabamba</span><span>Retiro en el local · Pago acordado con el establecimiento</span></div>

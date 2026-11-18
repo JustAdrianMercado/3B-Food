@@ -52,10 +52,10 @@ test("los reportes separan unidades y no cuentan reservas pendientes como retiro
   const state = createSeed(now);
   const metrics = getMetrics(state);
   assert.equal(metrics.length, 3);
-  assert.deepEqual(metrics.find((item) => item.unit === "unidades"), { unit: "unidades", published: 149, reserved: 1, collected: 43, cancelled: 8, uncollected: 1, proportion: 28.9 });
-  assert.deepEqual(metrics.find((item) => item.unit === "porciones"), { unit: "porciones", published: 72, reserved: 4, collected: 27, cancelled: 0, uncollected: 3, proportion: 37.5 });
-  assert.equal(metrics.find((item) => item.unit === "kg")!.collected, 9.5);
-  assert.equal(getMetrics(state, { establishmentId: "est-espiga" })[0].unit, "unidades");
+  assert.deepEqual(metrics.find((item) => item.unit === "unidades"), { unit: "unidades", published: 152, reserved: 5, collected: 50, cancelled: 6, uncollected: 1, proportion: 32.9 });
+  assert.deepEqual(metrics.find((item) => item.unit === "porciones"), { unit: "porciones", published: 136, reserved: 7, collected: 52, cancelled: 2, uncollected: 4, proportion: 38.2 });
+  assert.equal(metrics.find((item) => item.unit === "kg")!.collected, 17);
+  assert.deepEqual(getMetrics(state, { establishmentId: "est-espiga" }).map((item) => item.unit), ["porciones", "unidades"]);
   assert.deepEqual(getMetrics(state, { since: now + 1 }), []);
 });
 
@@ -63,7 +63,7 @@ test("el CSV incluye unidades separadas y escapa comillas", () => {
   const csv = reportCsv(getMetrics(createSeed(now)), 'Local "de prueba"', new Date(now).toISOString());
   assert.ok(csv.startsWith("﻿"));
   assert.ok(csv.includes('Local ""de prueba""'));
-  assert.ok(csv.includes('"kg";"39";"1";"9.5"'));
+  assert.ok(csv.includes('"kg";"64";"1";"17"'));
   assert.ok(csv.includes("Reporte de aprovechamiento"));
 });
 

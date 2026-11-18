@@ -25,6 +25,7 @@ async function inTransaction(run: (ids: { establishment: string }) => Promise<vo
       "insert into establishments (id, slug, name, type, zone, address, description, opening_hours, initials, color) values ($1, $1, 'Local de prueba', 'Restaurante', 'Centro', 'Calle 1', 'Descripción de prueba', 'Todos los días', 'LP', '#cccccc')",
       [establishment],
     );
+    await client.query("insert into users (id, name, email, password_hash, role) values ('usr-test-a', 'Ana Prueba', 'usr-test-a@correo.bo', 'x', 'consumidor'), ('usr-test-b', 'Beto Prueba', 'usr-test-b@correo.bo', 'x', 'consumidor')");
     await run({ establishment });
   } finally {
     await client.query("rollback");
@@ -46,8 +47,8 @@ async function createOffer(establishment: string, options: LotOptions = {}) {
 }
 
 const available = async (lotId: string) => Number((await client.query("select available_quantity from lots where id = $1", [lotId])).rows[0].available_quantity);
-const reserve = async (offerId: string, quantity: number, token = "token-a") =>
-  (await client.query("select * from reserve_offer($1, $2, 'Ana Prueba', $3)", [offerId, quantity, token])).rows[0];
+const reserve = async (offerId: string, quantity: number, user = "usr-test-a") =>
+  (await client.query("select * from reserve_offer($1, $2, $3)", [offerId, quantity, user])).rows[0];
 
 /** Runs a statement that should fail, without aborting the surrounding transaction. */
 async function rejects(sql: string, params: unknown[], message: RegExp) {
@@ -61,12 +62,22 @@ test("la última unidad se reserva una sola vez y no admite sobre-reserva", () =
   const reservation = await reserve(offerId, 3);
   assert.match(reservation.code, /^ECO-[A-F0-9]{6}$/);
   assert.equal(await available(lotId), 0);
-  await rejects("select reserve_offer($1, 1, 'Ana', 't')", [offerId], /no está disponible/);
+  await rejects("select reserve_offer($1, 1, 'usr-test-a')", [offerId], /no está disponible/);
+}));
+
+test("solo una cuenta de cliente existente puede reservar", () => inTransaction(async ({ establishment }) => {
+  const { lotId, offerId } = await createOffer(establishment);
+  await rejects("select reserve_offer($1, 1, 'usr-no-existe')", [offerId], /cuenta de cliente/);
+  await client.query("insert into users (id, name, email, password_hash, role, establishment_id) values ('usr-test-local', 'Dueño', 'usr-test-local@correo.bo', 'x', 'establecimiento', $1)", [establishment]);
+  await rejects("select reserve_offer($1, 1, 'usr-test-local')", [offerId], /cuenta de cliente/);
+  assert.equal(await available(lotId), 3);
+  const reservation = await reserve(offerId, 1);
+  assert.equal(reservation.customer_name, "Ana Prueba", "El nombre de retiro sale de la cuenta");
 }));
 
 test("cantidades inválidas se rechazan sin modificar existencias", () => inTransaction(async ({ establishment }) => {
   const { lotId, offerId } = await createOffer(establishment);
-  for (const amount of [0, -1, 1.5, 4]) await rejects("select reserve_offer($1, $2, 'Ana', 't')", [offerId, amount], /cantidad|existencias/);
+  for (const amount of [0, -1, 1.5, 4]) await rejects("select reserve_offer($1, $2, 'usr-test-a')", [offerId, amount], /cantidad|existencias/);
   assert.equal(await available(lotId), 3);
 }));
 
@@ -74,18 +85,18 @@ test("los kilogramos admiten decimales y cancelar libera exactamente lo reservad
   const { lotId, offerId } = await createOffer(establishment, { unit: "kg", quantity: 2.5 });
   const reservation = await reserve(offerId, 0.1);
   assert.equal(await available(lotId), 2.4);
-  await client.query("select cancel_reservation($1, 'token-a', null)", [reservation.id]);
+  await client.query("select cancel_reservation($1, 'usr-test-a', null)", [reservation.id]);
   assert.equal(await available(lotId), 2.5);
 }));
 
 test("cancelar exige ser el titular o el establecimiento y solo libera una vez", () => inTransaction(async ({ establishment }) => {
   const { lotId, offerId } = await createOffer(establishment);
   const reservation = await reserve(offerId, 2);
-  await rejects("select cancel_reservation($1, 'otro-token', null)", [reservation.id], /No encontramos esta reserva/);
+  await rejects("select cancel_reservation($1, 'usr-test-b', null)", [reservation.id], /No encontramos esta reserva/);
   await rejects("select cancel_reservation($1, null, 'est-otro')", [reservation.id], /No encontramos esta reserva/);
   await client.query("select cancel_reservation($1, null, $2)", [reservation.id, establishment]);
   assert.equal(await available(lotId), 3);
-  await rejects("select cancel_reservation($1, 'token-a', null)", [reservation.id], /ya está cerrada/);
+  await rejects("select cancel_reservation($1, 'usr-test-a', null)", [reservation.id], /ya está cerrada/);
   assert.equal(await available(lotId), 3);
   const types = (await client.query("select type from movements where reservation_id = $1 order by created_at", [reservation.id])).rows.map((row) => row.type);
   assert.deepEqual(types.sort(), ["Cancelación", "Reserva"]);
@@ -115,7 +126,7 @@ test("las reservas vencidas pasan a no retiradas una sola vez y la oferta queda 
   assert.equal(await available(lotId), 3);
   await client.query("select expire_reservations()");
   assert.equal(await available(lotId), 3, "Una segunda ejecución no libera existencias otra vez");
-  await rejects("select reserve_offer($1, 1, 'Ana', 't')", [offerId], /no está disponible/);
+  await rejects("select reserve_offer($1, 1, 'usr-test-a')", [offerId], /no está disponible/);
 }));
 
 test("cambiar el precio conserva el de las reservas existentes", () => inTransaction(async ({ establishment }) => {
@@ -131,7 +142,7 @@ test("cambiar el precio conserva el de las reservas existentes", () => inTransac
 test("pausar impide nuevas reservas y reactivar las permite", () => inTransaction(async ({ establishment }) => {
   const { offerId } = await createOffer(establishment);
   await client.query("select toggle_offer($1, $2)", [offerId, establishment]);
-  await rejects("select reserve_offer($1, 1, 'Ana', 't')", [offerId], /no está disponible/);
+  await rejects("select reserve_offer($1, 1, 'usr-test-a')", [offerId], /no está disponible/);
   await client.query("select toggle_offer($1, $2)", [offerId, establishment]);
   await reserve(offerId, 1);
 }));
@@ -159,12 +170,14 @@ test("dos personas que reservan la última unidad a la vez: solo una lo consigue
     "insert into establishments (id, slug, name, type, zone, address, description, opening_hours, initials, color) values ($1, $1, 'Local de prueba', 'Restaurante', 'Centro', 'Calle 1', 'Descripción de prueba', 'Todos los días', 'LP', '#cccccc')",
     [establishment],
   );
+  const users = [`usr-test-${randomUUID()}`, `usr-test-${randomUUID()}`];
+  for (const user of users) await client.query("insert into users (id, name, email, password_hash, role) values ($1, 'Persona de prueba', $1 || '@correo.bo', 'x', 'consumidor')", [user]);
   const [first, second] = await Promise.all([connect(), connect()]);
   try {
     const { lotId, offerId } = await createOffer(establishment, { quantity: 1 });
     const results = await Promise.allSettled([
-      first.query("select * from reserve_offer($1, 1, 'Persona A', 'token-a')", [offerId]),
-      second.query("select * from reserve_offer($1, 1, 'Persona B', 'token-b')", [offerId]),
+      first.query("select * from reserve_offer($1, 1, $2)", [offerId, users[0]]),
+      second.query("select * from reserve_offer($1, 1, $2)", [offerId, users[1]]),
     ]);
     assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
     assert.equal(results.filter((result) => result.status === "rejected").length, 1);
@@ -176,6 +189,7 @@ test("dos personas que reservan la última unidad a la vez: solo una lo consigue
     await client.query("delete from offers where lot_id in (select id from lots where establishment_id = $1)", [establishment]);
     await client.query("delete from lots where establishment_id = $1", [establishment]);
     await client.query("delete from establishments where id = $1", [establishment]);
+    await client.query("delete from users where id = any($1)", [users]);
   }
 });
 
@@ -184,7 +198,7 @@ test("la clave pública de Supabase no puede leer ni modificar datos", async () 
   const anonKey = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   assert.ok(url && anonKey, "Faltan SUPABASE_URL y SUPABASE_ANON_KEY");
   const anon = createClient(url, anonKey, { auth: { persistSession: false } });
-  for (const table of ["establishments", "lots", "offers", "reservations", "movements", "business_applications", "contact_messages"]) {
+  for (const table of ["establishments", "lots", "offers", "reservations", "movements", "business_applications", "contact_messages", "users", "sessions"]) {
     const { data } = await anon.from(table).select("*").limit(1);
     assert.deepEqual(data ?? [], [], `La tabla ${table} no debe ser legible con la clave pública`);
   }

@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
+import { ACCOUNTS, signIn } from "./helpers";
 
 /** Scroll through the page so every scroll-triggered reveal has finished before auditing. */
 async function revealAll(page: Page) {
@@ -15,20 +16,27 @@ async function revealAll(page: Page) {
 }
 
 const audit = (page: Page) => new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+const violations = (result: Awaited<ReturnType<typeof audit>>) => result.violations.map((violation) => ({ id: violation.id, description: violation.description, nodes: violation.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })) }));
 
-for (const route of ["/", "/ofertas", "/ofertas/pan-artesanal", "/establecimientos", "/establecimientos/cafe-el-prado", "/como-funciona", "/negocios", "/nosotros", "/preguntas-frecuentes", "/contacto", "/negocios/unirse", "/mis-reservas", "/panel/inventario", "/admin", "/admin/solicitudes"]) {
+const routes: [string, keyof typeof ACCOUNTS | null][] = [
+  ["/", null], ["/ofertas", null], ["/ofertas/pan-artesanal", null], ["/establecimientos", null], ["/establecimientos/cafe-el-prado", null],
+  ["/como-funciona", null], ["/negocios", null], ["/nosotros", null], ["/preguntas-frecuentes", null], ["/contacto", null], ["/negocios/unirse", null],
+  ["/ingresar", null], ["/registro", null], ["/mis-reservas", "customer"], ["/panel/inventario", "business"], ["/panel/historial", "business"],
+  ["/admin", "admin"], ["/admin/usuarios", "admin"],
+];
+
+for (const [route, account] of routes) {
   test(`accesibilidad de ${route}`, async ({ page }) => {
+    if (account) await signIn(page, ACCOUNTS[account], route);
     await page.goto(route, { waitUntil: "networkidle" });
     await revealAll(page);
-    const result = await audit(page);
-    expect(result.violations.map((violation) => ({ id: violation.id, description: violation.description, nodes: violation.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })) }))).toEqual([]);
+    expect(violations(await audit(page))).toEqual([]);
   });
 }
 
 test("formulario accesible con foco contenido en el diálogo", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/panel");
+  await signIn(page, ACCOUNTS.business, "/panel");
   await page.getByRole("button", { name: "Publicar excedente" }).click();
-  const result = await audit(page);
-  expect(result.violations.map((violation) => ({ id: violation.id, nodes: violation.nodes.map((node) => ({ target: node.target, summary: node.failureSummary })) }))).toEqual([]);
+  expect(violations(await audit(page))).toEqual([]);
 });

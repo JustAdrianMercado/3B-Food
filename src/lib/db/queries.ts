@@ -1,14 +1,14 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
-import type { Establishment, Reservation, SiteState } from "@/lib/domain";
+import type { Establishment, Reservation, Role, SiteState, Viewer } from "@/lib/domain";
+import { getViewer } from "@/lib/auth";
 import { getDb } from "./client";
 import { ESTABLISHMENT_COLUMNS, LOT_COLUMNS, MOVEMENT_COLUMNS, OFFER_COLUMNS, RESERVATION_COLUMNS, toEstablishment, toLot, toMovement, toOffer, toReservation } from "./mappers";
 
 /** Which part of the site is asking: decides how much reservation and history data is sent. */
 export type Area = "public" | "panel" | "admin";
 
-export const VISITOR_COOKIE = "eco_cid";
 export const PANEL_COOKIE = "eco_panel_est";
 
 function check<T>(result: { data: T | null; error: { message: string } | null }, what: string): T {
@@ -50,15 +50,29 @@ export async function expireReservations(): Promise<void> {
   if (error) throw new Error(`No se pudieron actualizar las reservas vencidas: ${error.message}`);
 }
 
+/** Whether the signed-in account may load or act on an area of the site. */
+export function canUseArea(area: Area, viewer: Viewer | null): boolean {
+  if (area === "panel") return viewer?.role === "establecimiento" || viewer?.role === "administrador";
+  if (area === "admin") return viewer?.role === "administrador";
+  return true;
+}
+
+/** Establishment accounts always manage their own; administrators choose one in the panel (saved in a cookie). */
+export function managedEstablishment(viewer: Viewer | null, establishmentIds: string[], requested: string | undefined): string | null {
+  if (viewer?.role === "establecimiento") return viewer.establishmentId;
+  if (viewer?.role === "administrador") return establishmentIds.includes(requested ?? "") ? requested! : establishmentIds[0] ?? null;
+  return null;
+}
+
 /**
- * Builds the state a page needs. Public pages only get the visitor's own reservations and no history;
- * the business panel adds the selected establishment's reservations and movements; admin gets everything.
- * Visitor tokens never leave the server.
+ * Builds the state a page needs. Public pages only get the signed-in customer's own reservations and no history;
+ * the business panel adds the managed establishment's reservations and movements; admin gets everything.
  */
 export async function loadState(area: Area): Promise<SiteState> {
   await connection();
   const store = await cookies();
-  const token = store.get(VISITOR_COOKIE)?.value;
+  const viewer = await getViewer();
+  if (!canUseArea(area, viewer)) throw new Error("Acceso no autorizado.");
   const db = getDb();
   await expireReservations();
 
@@ -71,12 +85,11 @@ export async function loadState(area: Area): Promise<SiteState> {
   const lots = check(lotRows, "los lotes").map(toLot);
   const offers = check(offerRows, "las ofertas").map(toOffer);
 
-  const requested = store.get(PANEL_COOKIE)?.value;
-  const selectedEstablishmentId = establishments.some((item) => item.id === requested) ? requested! : establishments[0]?.id ?? "";
+  const selectedEstablishmentId = managedEstablishment(viewer, establishments.map((item) => item.id), store.get(PANEL_COOKIE)?.value) ?? establishments[0]?.id ?? "";
 
   const reservations = new Map<string, Reservation>();
-  const addReservations = (rows: Record<string, unknown>[]) => rows.forEach((row) => reservations.set(String(row.id), toReservation(row, token)));
-  if (token) addReservations(check(await db.from("reservations").select(RESERVATION_COLUMNS).eq("customer_token", token).order("created_at", { ascending: false }), "tus reservas"));
+  const addReservations = (rows: Record<string, unknown>[]) => rows.forEach((row) => reservations.set(String(row.id), toReservation(row, viewer?.id)));
+  if (viewer?.role === "consumidor") addReservations(check(await db.from("reservations").select(RESERVATION_COLUMNS).eq("user_id", viewer.id).order("created_at", { ascending: false }), "tus reservas"));
 
   let movements: SiteState["movements"] = [];
   if (area === "panel") {
@@ -90,19 +103,32 @@ export async function loadState(area: Area): Promise<SiteState> {
   }
 
   return {
-    establishments, selectedEstablishmentId, lots, offers,
+    viewer, establishments, selectedEstablishmentId, lots, offers,
     reservations: [...reservations.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)),
     movements,
   };
 }
 
-export interface BusinessApplication { id: string; businessName: string; businessType: string; zone: string; contactName: string; phone: string; email: string | null; message: string | null; createdAt: string }
 export interface ContactMessage { id: string; name: string; email: string; subject: string; message: string; createdAt: string }
 
-export async function getBusinessApplications(): Promise<BusinessApplication[]> {
+export interface Account { id: string; name: string; email: string; phone: string | null; role: Role; establishment: string | null; createdAt: string; reservations: number }
+
+export async function getAccounts(): Promise<Account[]> {
   await connection();
-  const rows = check(await getDb().from("business_applications").select("*").order("created_at", { ascending: false }).limit(500), "las solicitudes");
-  return rows.map((row) => ({ id: row.id, businessName: row.business_name, businessType: row.business_type, zone: row.zone, contactName: row.contact_name, phone: row.phone, email: row.email, message: row.message, createdAt: new Date(row.created_at).toISOString() }));
+  const db = getDb();
+  const [userRows, establishmentRows, reservationRows] = await Promise.all([
+    db.from("users").select("id, name, email, phone, role, establishment_id, created_at").order("created_at", { ascending: false }).limit(1000),
+    db.from("establishments").select("id, name"),
+    db.from("reservations").select("user_id").not("user_id", "is", null).limit(10000),
+  ]);
+  const names = new Map(check(establishmentRows, "los establecimientos").map((row) => [row.id as string, row.name as string]));
+  const counts = new Map<string, number>();
+  for (const row of check(reservationRows, "las reservas")) counts.set(row.user_id as string, (counts.get(row.user_id as string) ?? 0) + 1);
+  return check(userRows, "las cuentas").map((row) => ({
+    id: row.id, name: row.name, email: row.email, phone: row.phone ?? null, role: row.role as Role,
+    establishment: row.establishment_id ? names.get(row.establishment_id) ?? null : null,
+    createdAt: new Date(row.created_at).toISOString(), reservations: counts.get(row.id) ?? 0,
+  }));
 }
 
 export async function getContactMessages(): Promise<ContactMessage[]> {

@@ -10,7 +10,7 @@ const num = (value: unknown) => Number(value);
 export const ESTABLISHMENT_COLUMNS = "id, slug, name, type, zone, address, description, opening_hours, initials, color";
 export const LOT_COLUMNS = "id, establishment_id, name, description, category, unit, initial_quantity, available_quantity, entry_at, date_type, food_date, commercialization_ends_at, pickup_starts_at, pickup_ends_at, alert_minutes, suitability_declared";
 export const OFFER_COLUMNS = "id, lot_id, regular_price, price, image, published_at, paused";
-export const RESERVATION_COLUMNS = "id, code, offer_id, quantity, unit_price, customer_name, customer_token, status, created_at, closed_at";
+export const RESERVATION_COLUMNS = "id, code, offer_id, quantity, unit_price, customer_name, user_id, status, created_at, closed_at";
 export const MOVEMENT_COLUMNS = "id, lot_id, reservation_id, type, quantity, detail, created_at";
 
 export function toEstablishment(row: Row): Establishment {
@@ -37,12 +37,12 @@ export function toOffer(row: Row): Offer {
   });
 }
 
-/** The visitor token stays on the server; the client only learns whether the reservation is theirs. */
-export function toReservation(row: Row, visitorToken: string | undefined): Reservation {
+/** The client only learns whether the reservation belongs to the signed-in customer. */
+export function toReservation(row: Row, viewerId: string | undefined): Reservation {
   return reservationSchema.parse({
     id: row.id, code: row.code, offerId: row.offer_id, quantity: num(row.quantity), unitPrice: num(row.unit_price),
     createdAt: iso(row.created_at), status: row.status, closedAt: isoOrNull(row.closed_at),
-    customerName: row.customer_name ?? null, mine: Boolean(visitorToken && row.customer_token === visitorToken),
+    customerName: row.customer_name ?? null, mine: Boolean(viewerId && row.user_id === viewerId),
   });
 }
 

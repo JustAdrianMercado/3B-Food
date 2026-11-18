@@ -7,6 +7,7 @@ import "@fontsource/dm-sans/latin-800.css";
 import "@fontsource/dm-serif-display/latin-400.css";
 import "@fontsource/dm-serif-display/latin-400-italic.css";
 import "./globals.css";
+import "./accounts.css";
 import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {

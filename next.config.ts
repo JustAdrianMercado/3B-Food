@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       { source: "/establecimiento/reservas", destination: "/panel/reservas", permanent: true },
       { source: "/establecimiento/reportes", destination: "/panel/indicadores", permanent: true },
       { source: "/proyecto", destination: "/", permanent: true },
+      { source: "/admin/solicitudes", destination: "/admin/usuarios", permanent: false },
     ];
   },
   async headers() {

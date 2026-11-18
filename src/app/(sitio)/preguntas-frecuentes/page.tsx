@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 const groups = [
   { id: "consumidores", title: "Para quienes compran", items: [
+    { q: "¿Necesito una cuenta para reservar?", a: "Sí. Puedes explorar las ofertas sin registrarte, pero para reservar necesitas una cuenta de cliente: nombre, correo y contraseña. Así guardamos tus códigos de retiro y tu historial." },
     { q: "¿Qué tipo de alimentos encuentro en EcoRescate?", a: "Excedentes aptos para el consumo de restaurantes y supermercados de Cochabamba: platos del día, panadería, frutas y verduras, lácteos y productos de despensa próximos a su fecha de consumo preferente." },
     { q: "¿Cómo pago mi reserva?", a: "Directamente en el establecimiento al momento del retiro. EcoRescate no realiza cobros en línea; el total que ves al reservar es el que acuerdas con el local." },
     { q: "¿Hacen envíos a domicilio?", a: "No. Todas las ofertas se retiran en persona en el local, dentro del horario de retiro indicado en cada una." },
@@ -18,6 +19,7 @@ const groups = [
     { q: "¿Quién garantiza la calidad del alimento?", a: "Cada establecimiento respalda la aptitud para el consumo, la conservación y la cadena de frío de lo que publica. Consulta alérgenos e indicaciones de conservación al retirar." },
   ] },
   { id: "negocios", title: "Para establecimientos", items: [
+    { q: "¿Cómo registro mi establecimiento?", a: "Desde «Registrar mi negocio»: en tres pasos cortos indicas los datos del local, tu horario y tu cuenta. Al terminar entras a tu panel y puedes publicar tu primera oferta." },
     { q: "¿Qué puedo publicar?", a: "Alimentos aptos para el consumo que no alcanzarás a vender en tu horario habitual. No se permiten productos vencidos, en mal estado ni ofertas cuyo plazo comercial ya terminó." },
     { q: "¿Cómo se definen las alertas?", a: "Al registrar un lote eliges con cuánta anticipación quieres el aviso, de 30 minutos a 24 horas, según la vida útil del alimento. Los avisos aparecen en tu panel." },
     { q: "¿Puedo cambiar el precio de una oferta?", a: "Sí. Puedes modificar el precio o pausar la oferta mientras siga vigente. Las reservas que ya existían conservan el precio con el que se hicieron." },

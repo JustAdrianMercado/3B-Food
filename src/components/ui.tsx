@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowUpRight, Leaf, X } from "lucide-react";
+import { ArrowUpRight, Check, Leaf, X } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +48,23 @@ export function LoadingCards({ count = 3 }: { count?: number }) {
 
 export function PageHeading({ eyebrow, title, description, action }: { eyebrow: string; title: string; description?: string; action?: ReactNode }) {
   return <div className="page-heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{description && <p>{description}</p>}</div>{action}</div>;
+}
+
+/** Progress of a step-by-step form. Completed steps can be revisited. */
+export function Stepper({ steps, current, onSelect, label, compact = false }: { steps: readonly string[]; current: number; onSelect: (index: number) => void; label: string; compact?: boolean }) {
+  return <ol className={cn("stepper", compact && "stepper--compact")} aria-label={label}>{steps.map((step, index) => <li key={step} className={cn(index === current && "current", index < current && "done")} aria-current={index === current ? "step" : undefined}>
+    <button type="button" onClick={() => { if (index < current) onSelect(index); }} disabled={index >= current}><span aria-hidden="true">{index < current ? <Check size={13} /> : index + 1}</span><em><span className="sr-only">Paso {index + 1}: </span>{step}{index < current && <span className="sr-only"> (completado)</span>}</em></button>
+  </li>)}</ol>;
+}
+
+/** Simple previous/next pagination with a page counter. */
+export function Pagination({ page, pages, onChange, label }: { page: number; pages: number; onChange: (page: number) => void; label: string }) {
+  if (pages <= 1) return null;
+  return <nav className="pagination" aria-label={label}>
+    <button type="button" className="btn btn-secondary btn-small" onClick={() => onChange(page - 1)} disabled={page <= 1}>Anterior</button>
+    <span aria-live="polite">Página <b>{page}</b> de {pages}</span>
+    <button type="button" className="btn btn-secondary btn-small" onClick={() => onChange(page + 1)} disabled={page >= pages}>Siguiente</button>
+  </nav>;
 }
 
 export function TextLink({ href, children }: { href: string; children: ReactNode }) { return <Link className="text-link" href={href}>{children}<ArrowUpRight size={17} /></Link>; }

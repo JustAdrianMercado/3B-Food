@@ -11,15 +11,27 @@ Sitio web para encontrar, reservar y retirar excedentes alimentarios aptos para 
 
 ## Estructura del sitio
 
-| Área | Rutas |
+| Área | Rutas | Acceso |
+| --- | --- | --- |
+| Público | `/`, `/ofertas`, `/ofertas/[id]`, `/establecimientos`, `/establecimientos/[slug]`, `/como-funciona`, `/negocios`, `/nosotros`, `/preguntas-frecuentes`, `/contacto` | Libre |
+| Cuentas | `/ingresar`, `/registro` (clientes), `/negocios/unirse` (registro de establecimiento en 3 pasos) | Libre |
+| Clientes | `/mis-reservas` y la acción de reservar | Rol `consumidor` |
+| Establecimientos | `/panel`, `/panel/inventario`, `/panel/reservas`, `/panel/historial`, `/panel/indicadores` | Rol `establecimiento` (solo su local) o `administrador` (elige el local) |
+| Administración | `/admin`, `/admin/historial`, `/admin/usuarios`, `/admin/mensajes` | Rol `administrador` |
+
+## Cuentas y roles
+
+- Contraseñas con `scrypt` (sal aleatoria). La sesión es un token aleatorio en una cookie `httpOnly` (`eco_session`); en la base solo se guarda su hash SHA-256 (`sessions`).
+- Los layouts de `/panel` y `/admin` y la página `/mis-reservas` verifican el rol en el servidor; cada Server Action vuelve a comprobarlo. Las funciones SQL validan que quien reserva sea una cuenta de cliente y que quien cancela sea el titular o el establecimiento.
+- `npm run db:seed` crea las cuentas iniciales con la contraseña `SEED_PASSWORD` de `src/lib/seed.ts`:
+
+| Rol | Correo |
 | --- | --- |
-| Público | `/`, `/ofertas`, `/ofertas/[id]`, `/establecimientos`, `/establecimientos/[slug]`, `/como-funciona`, `/negocios`, `/negocios/unirse`, `/nosotros`, `/preguntas-frecuentes`, `/contacto`, `/mis-reservas` |
-| Establecimientos | `/panel`, `/panel/inventario`, `/panel/reservas`, `/panel/indicadores` |
-| Administración (sin enlace público) | `/admin`, `/admin/solicitudes`, `/admin/mensajes` |
+| Administración | `admin@ecorescate.bo` |
+| Establecimiento (uno por local) | `laespiga@ecorescate.bo`, `cocinadebarrio@ecorescate.bo`, `mercadoverde@ecorescate.bo`, … (lista en `src/lib/seed.ts`) |
+| Cliente | `ana.rojas@correo.bo`, `luis.fernandez@correo.bo`, … |
 
-«Mis reservas» identifica a cada visitante con una cookie anónima (`eco_cid`); el establecimiento seleccionado en el panel se guarda en `eco_panel_est`.
-
-> **Todavía no hay autenticación.** Cualquiera que conozca la URL puede usar `/panel` y `/admin`. Mantén la URL privada hasta incorporar cuentas y permisos por establecimiento.
+> Cambia estas contraseñas (o vuelve a cargar los datos sin cuentas iniciales) antes de abrir el sitio a usuarios reales.
 
 ## Configuración local
 
@@ -48,7 +60,7 @@ Variables usadas: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (o `SUPABASE_SECRE
 | `npm run test:db` | Reglas SQL contra Supabase; cada prueba se revierte |
 | `npm run test:e2e` | Playwright; requiere `npm run build` antes |
 | `npm run db:migrate` | Aplica las migraciones pendientes de `supabase/migrations` |
-| `npm run db:seed` | Reemplaza establecimientos, ofertas, reservas e historial con datos de ejemplo |
+| `npm run db:seed` | Reemplaza establecimientos, cuentas, ofertas, reservas, historial y mensajes con los datos iniciales (fechas relativas al momento de la carga) |
 
 > **Importante:** la integración conectó la misma base de datos a desarrollo, preview y producción. `npm run db:seed` y `npm run test:e2e` (que vuelve a cargar los datos de ejemplo) **reemplazan los datos reales**. Antes de recibir usuarios reales, crea una base separada para desarrollo o ejecuta las pruebas E2E con `E2E_RESEED=0`.
 

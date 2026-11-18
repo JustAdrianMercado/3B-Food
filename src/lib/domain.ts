@@ -4,8 +4,22 @@ export const UNITS = ["porciones", "unidades", "kg"] as const;
 export type Unit = (typeof UNITS)[number];
 export const CATEGORIES = ["Cocina del día", "Panadería", "Frutas y verduras", "Lácteos", "Despensa"] as const;
 export type Category = (typeof CATEGORIES)[number];
-export const ZONES = ["Tupuraya", "Cala Cala", "Centro", "La Recoleta", "El Prado", "Queru Queru", "Sarco", "Muyurina"] as const;
+export const ZONES = ["Tupuraya", "Cala Cala", "Centro", "La Recoleta", "El Prado", "Queru Queru", "Sarco", "Muyurina", "Hipódromo", "Las Cuadras"] as const;
 export const TIME_ZONE = "America/La_Paz";
+
+export const ROLES = ["consumidor", "establecimiento", "administrador"] as const;
+export type Role = (typeof ROLES)[number];
+export const roleLabel: Record<Role, string> = { consumidor: "Cliente", establecimiento: "Establecimiento", administrador: "Administración" };
+export const roleHome = (role: Role) => role === "establecimiento" ? "/panel" : role === "administrador" ? "/admin" : "/ofertas";
+
+/** The signed-in account, as the browser may see it. */
+export interface Viewer {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  establishmentId: string | null;
+}
 
 /** Illustrative photo used for each category until offers support their own images. */
 export const categoryImages: Record<Category, string> = {
@@ -65,7 +79,7 @@ export const reservationSchema = z.object({
   status: z.enum(["Reservada", "Retirada", "Cancelada", "No retirada"]),
   closedAt: z.string().datetime().nullable(),
   customerName: z.string().nullable(),
-  /** True when the reservation belongs to the current visitor (never exposes the visitor token). */
+  /** True when the reservation belongs to the signed-in customer. */
   mine: z.boolean(),
 });
 
@@ -87,6 +101,7 @@ export type Movement = z.infer<typeof movementSchema>;
 
 /** Everything a page needs, already filtered on the server for the current visitor and area. */
 export interface SiteState {
+  viewer: Viewer | null;
   establishments: Establishment[];
   selectedEstablishmentId: string;
   lots: Lot[];
@@ -150,6 +165,8 @@ export const fromLocalInput = (value: string) => new Date(`${value}:00-04:00`).t
 export const foodDateEnd = (value: string) => new Date(`${value}T23:59:59.999-04:00`).getTime();
 export const discount = (offer: Offer) => Math.round((1 - offer.price / offer.regularPrice) * 100);
 export const unitLabel = (unit: Unit) => unit === "kg" ? "kg" : unit === "porciones" ? "porción" : "unidad";
+/** "1 unidad", "3 unidades", "1,5 kg". */
+export const amountLabel = (value: number, unit: Unit) => `${number(value)} ${value === 1 ? unitLabel(unit) : unit}`;
 
 export function effectiveEnd(lot: Lot): number {
   return Math.min(Date.parse(lot.commercializationEndsAt), Date.parse(lot.pickupEndsAt), foodDateEnd(lot.foodDate));

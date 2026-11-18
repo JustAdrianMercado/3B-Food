@@ -1,64 +1,65 @@
-# Guion de exposición: 5–7 minutos
+# Guion de exposición: 6–8 minutos
 
-Entrega prevista: jueves 12 de noviembre de 2026. Tres integrantes; una computadora para la demostración y, si es posible, un celular para mostrar el diseño adaptable.
+Sitio: **https://ecorescate-chi.vercel.app** (producción en Vercel, base de datos Supabase). Tres integrantes; una computadora para la demostración y, si es posible, un celular para mostrar el diseño adaptable.
 
-## Preparación
+## Cuentas para la demostración
 
-1. Ejecutar `npm run build` y `npm start` antes de la exposición. Abrir `http://localhost:3000` y comprobar las fotografías.
-2. Pulsar **Restablecer demo** en el pie de página. Esto elimina cambios de ensayo y renueva las fechas.
-3. Preparar pestañas de inicio, establecimiento, catálogo, reservas, administrador y proyecto.
-4. Mantener la conexión con el servidor. Las fuentes y fotos son locales, pero las rutas se sirven desde Next.js.
-5. Dejar preparado un ejemplo llamado **Pack de panadería del día**, con 3 unidades, precio habitual Bs 30 y oferta Bs 18. Usar horarios que incluyan la hora de exposición, una fecha alimentaria vigente y una descripción de conservación/alérgenos.
+Todas usan la contraseña `Rescate2026`.
 
-## Integrante 1 · Problema y propósito · 0:00–1:30
+| Rol | Correo | Para mostrar |
+| --- | --- | --- |
+| Administración | `admin@ecorescate.bo` | Indicadores globales, historial de toda la plataforma, usuarios y roles, mensajes |
+| Establecimiento | `laespiga@ecorescate.bo` (La Espiga de Tupuraya) | Panel, alertas, inventario PEPS, publicar, confirmar retiros |
+| Cliente | `ana.rojas@correo.bo` (Ana Rojas) | Reservar, Mis reservas, cancelar |
 
-Mostrar inicio y **El proyecto**.
+Otros locales: `cocinadebarrio@`, `mercadoverde@`, `mesarecoleta@`, `cafeelprado@`, `saboresqueru@`, `supersarco@`, `muyurina@`, `donajulia@`, `despensahipodromo@` (todos `@ecorescate.bo`).
 
-> Investigamos el desperdicio de alimentos aptos para el consumo en restaurantes y supermercados de Cochabamba. El informe identifica tres dificultades: reconocer tarde los excedentes, registrar y rotar inadecuadamente el inventario y comunicar las ofertas cuando ya queda poco tiempo para comercializarlas.
->
-> Proponemos una solución web y móvil que conecte la gestión de los lotes con la publicación de ofertas y su reserva por consumidores. Esta entrega es una demostración de los alcances: los locales son ficticios y no presentamos resultados de un piloto real.
+## Preparación (10 minutos antes)
 
-Relacionar los tres objetivos con alertas, inventario y publicación/reserva. Mostrar brevemente la adaptación a celular.
+1. Si quieres los datos «frescos» (ofertas vigentes desde ahora y hasta la noche), ejecuta `npm run db:seed` en la carpeta del proyecto. Recarga ofertas, reservas e historial con fechas relativas al momento de la carga. **Borra cualquier cuenta u oferta creada durante el ensayo.**
+2. Abre tres ventanas: una normal (cliente), una de incógnito (establecimiento) y otra de otro navegador o perfil (administración). Cada ventana conserva su propia sesión.
+3. Prepara el ejemplo para publicar: **Empanadas de queso del día**, 12 unidades, precio habitual Bs 7, oferta Bs 4.
 
-## Integrante 2 · Establecimiento y consumidor · 1:30–4:30
+## Integrante 1 · Problema y propuesta · 0:00–1:30
 
-1. Entrar al panel de **La Espiga de Tupuraya**.
-2. Mostrar que PEPS se ordena por ingreso y que priorizar el límite comercial es otro criterio. No decir que una fecha de consumo preferente equivale a vencimiento.
-3. Mostrar la alerta configurable. Explicar que no se fija una anticipación universal de 48 horas.
-4. Publicar el ejemplo con **Registrar y publicar oferta**.
-5. Cambiar a consumidor y localizar el producto en el catálogo. Mostrar zona, contenido, precio por unidad y horario presencial.
-6. Reservar una unidad. Mostrar el código y **Mis reservas**. Recargar para demostrar persistencia local.
+Mostrar el inicio y el catálogo.
 
-> El precio lo establece el oferente. La reserva descuenta una cantidad disponible. El retiro es presencial y el pago se acuerda fuera de la plataforma; no hay cobros bancarios ni servicio de reparto.
+> El informe identifica tres dificultades en restaurantes y supermercados de Cochabamba: se reconocen tarde los excedentes, el inventario se registra y rota de forma inadecuada y la comunicación con los consumidores llega tarde. EcoRescate es una solución web responsiva que conecta la gestión de lotes con la publicación, la reserva y la entrega de excedentes aptos para el consumo.
 
-## Integrante 3 · Entrega, seguimiento y evaluación · 4:30–6:30
+Mostrar: filtros por categoría y **zona**, búsqueda, «Solo próximas a su límite», detalle de una oferta (precio, descuento, horario de retiro, dirección, tipo de fecha, aptitud declarada por el local).
 
-1. Volver a **Reservas y retiros** del establecimiento.
-2. Verificar el código y confirmar la entrega manualmente. La cantidad no se descuenta dos veces.
-3. Mostrar el historial y los indicadores. Elegir una unidad y explicar la proporción retirada.
-4. Descargar el CSV si el tiempo lo permite.
-5. Abrir los próximos pasos de **El proyecto**.
+## Integrante 2 · Roles, establecimiento y cliente · 1:30–5:00
 
-> Una reserva pendiente no es un alimento entregado. Por eso se distinguen publicaciones, reservas y retiros. Los kg, las porciones y las unidades nunca se suman en un total indiferenciado.
->
-> Los indicadores de la demo describen operaciones simuladas; no demuestran una reducción del desperdicio. Para evaluar la solución necesitamos incorporar autenticación, una base compartida, reservas seguras entre usuarios y un piloto con participación voluntaria y mediciones comparables.
+1. **Registro y autenticación con perfiles.** Sin sesión, pulsar «Reservar»: el sistema pide ingresar. Mostrar `/registro` (cliente: 3 datos) y `/negocios/unirse` (negocio: asistente de 3 pasos). Explicar que cada rol solo ve su espacio: una clienta que abre `/panel` recibe el aviso «Esta sección requiere una cuenta de establecimiento».
+2. **Panel del establecimiento** (La Espiga): tarjetas de ofertas vigentes, **alertas preventivas** («A tiempo de aprovechar», con la anticipación que define cada lote) y contadores en el menú.
+3. **Inventario:** alternar «PEPS · Ingreso» y «Fecha límite». Pausar y reactivar una oferta. **Editar precio:** el descuento se recalcula en vivo y las reservas existentes conservan su precio.
+4. **Publicar excedente** en 5 pasos cortos: Producto → Cantidad y precio (muestra el % de descuento) → Retiro (tiempo límite) → Fechas del lote (tipo de fecha e ingreso PEPS) → Revisar y declarar aptitud.
+5. **Cliente** (Ana): buscar la oferta publicada, reservar, mostrar el código y «Mis reservas».
+
+> El precio lo fija el establecimiento. La reserva descuenta existencias en una transacción de la base de datos, así que dos personas no pueden reservar la última unidad a la vez. El retiro es presencial y el pago se acuerda en el local.
+
+## Integrante 3 · Entrega, seguimiento y reportes · 5:00–7:30
+
+1. En el panel: **Reservas y retiros** → buscar el código → «Confirmar retiro» (verificación manual).
+2. **Historial:** filtrar por Publicación, Reserva, Retiro, Cancelación, Plazo finalizado o Cambio de precio; paginación y exportación CSV.
+3. **Mis indicadores:** publicado, por retirar y retirado por unidad (kg, unidades y porciones nunca se suman) y proporción retirada.
+4. **Administración:** indicadores globales con filtro por establecimiento y período, CSV, historial global y **Usuarios y roles**.
+5. Cerrar con las pruebas funcionales: reglas de dominio, reglas SQL (concurrencia, permisos) y recorridos automatizados con Playwright, incluida una auditoría de accesibilidad.
 
 ## Preguntas previsibles
 
 | Pregunta | Respuesta precisa |
 | --- | --- |
-| ¿Ya funciona con usuarios reales? | Esta entrega funciona como demo local. Las cuentas, permisos y datos compartidos pertenecen a la siguiente etapa con Supabase. |
-| ¿Cómo evitan vender alimentos vencidos? | La demo valida fechas, aptitud declarada y plazo comercial; fuera de plazo no permite reservar. En el sistema real estas validaciones también se harán en servidor. |
-| ¿Quién garantiza la inocuidad? | El establecimiento respalda la aptitud y conservación. La plataforma no certifica calidad sanitaria ni reemplaza cadena de frío o higiene. |
-| ¿Cuánto desperdicio redujeron? | Todavía no hay una medición de campo que permita afirmarlo. Se preparó un protocolo para evaluar utilización y, con línea de base adecuada, explorar resultados. |
-| ¿Es una aplicación móvil? | Es una web responsive con soporte de instalación PWA en navegadores compatibles. La aceptación de esta modalidad para el requisito académico se presentará al docente. |
-| ¿Se puede pagar o pedir delivery? | No. El informe excluye pagos bancarios integrados y reparto en la primera versión. |
-| ¿Los negocios que vemos participan realmente? | No. Son nombres, direcciones y operaciones ficticios para ilustrar el recorrido. |
+| ¿Los datos son reales? | Son datos simulados con nombres y operaciones verosímiles para mostrar el funcionamiento. El piloto con establecimientos voluntarios es la etapa siguiente del informe. |
+| ¿Cómo se protegen las cuentas? | Contraseñas cifradas con scrypt, sesión en cookie `httpOnly` y verificación del rol en el servidor en cada página y operación. La base no es accesible con la clave pública. |
+| ¿Cómo evitan vender alimentos vencidos? | Al publicar se valida que el tiempo límite no supere la fecha del alimento; las ofertas fuera de plazo se cierran solas y no admiten reservas. |
+| ¿Quién garantiza la inocuidad? | El establecimiento declara la aptitud y la conservación. La plataforma no certifica calidad sanitaria (límite del informe). |
+| ¿Cuánto desperdicio redujeron? | Todavía no hay mediciones de campo; los reportes están listos para registrar lo publicado, reservado y entregado durante el piloto. |
+| ¿Se puede pagar o pedir delivery? | No, por diseño: el informe excluye pagos integrados y reparto en la primera versión. |
+| ¿Notificaciones? | Las alertas aparecen en el panel según la anticipación de cada lote; no se promete un aviso fijo de 48 horas porque algunos alimentos duran menos. |
 
-## Si falla algo durante la exposición
+## Si falla algo
 
-- **No aparecen ofertas:** restablecer la demo; puede haber terminado su plazo o quedado un filtro activo.
-- **No permite confirmar retiro:** comprobar establecimiento seleccionado y ventana horaria del lote.
-- **No instala en el celular:** usar HTTPS y navegador compatible. La adaptación responsive puede mostrarse sin instalación.
-- **El navegador bloquea almacenamiento:** se mostrará un aviso; la demo seguirá en memoria, pero no conservará cambios al recargar.
-- **Se pierde conexión:** mostrar la pantalla informativa o volver al servidor local. Conservar capturas del ensayo como respaldo visual.
+- **Pocas ofertas o «Retiro aún no disponible»:** ejecutar `npm run db:seed` para renovar las fechas.
+- **No deja entrar al panel:** revisar que la sesión sea de una cuenta de establecimiento o administración (menú de cuenta, arriba a la derecha).
+- **Sin internet:** el sitio muestra una pantalla informativa; tener capturas del ensayo como respaldo.

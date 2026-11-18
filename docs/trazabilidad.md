@@ -12,20 +12,20 @@ Fuente de alcance: **Informe Segundo Entregable**, septiembre de 2026, apartados
 
 ## Cobertura del alcance
 
-| Alcance del apartado 5 | Estado para el jueves | Implementación posterior |
+| Alcance del apartado 5 | Implementación | Dónde verlo |
 | --- | --- | --- |
-| Registro y autenticación de tres perfiles | Selector explícito de vistas de demostración | Supabase Auth y permisos reales, con rol administrador asignado de forma controlada |
-| Publicación con nombre, descripción, cantidad, precio, entrega y límite | Interactivo, con datos ficticios | Persistencia compartida y permisos por establecimiento |
-| Lotes y fechas alimentarias | Interactivo | Revisión de campos con participantes del piloto |
-| Inventario y PEPS | Interactivo | Movimientos transaccionales y auditoría del servidor |
-| Alertas preventivas según vida útil | Visibles dentro del panel | Ejecución persistente y evaluación de canales de notificación |
-| Gestión de descuentos | Interactivo; reservas existentes conservan su precio | Historial persistente por usuario y establecimiento |
-| Consulta por zona/ubicación registrada | Zonas y direcciones ficticias | Direcciones de participantes verificadas; GPS/mapas no son requisito de esta demo |
-| Reserva y retiro confirmado manualmente | Interactivo | Control de concurrencia y verificación del usuario en el servidor |
-| Historial de publicaciones, reservas, entregas y cancelaciones | Interactivo y persistente en navegador | Auditoría compartida y respaldo |
-| Reportes básicos | Indicadores simulados y CSV por unidad | Datos de campo y evaluación de aprovechamiento |
-| Pruebas funcionales | Dominio y recorridos automatizados de navegador | Pruebas de servidor, permisos y concurrencia |
-| Piloto con voluntarios | Protocolo preparado, sin resultados inventados | Reclutamiento, consentimiento, ejecución y análisis |
+| Registro y autenticación que diferencie establecimientos, consumidores y administradores | Cuentas con rol (`consumidor`, `establecimiento`, `administrador`), contraseñas scrypt, sesión en cookie `httpOnly`, guardas por rol en servidor | `/registro`, `/negocios/unirse`, `/ingresar`, menú de cuenta; `/admin/usuarios` |
+| Publicación con nombre, descripción, cantidad, precio, condiciones de entrega y tiempo límite | Asistente de 5 pasos con validación por paso y en servidor | Panel → «Publicar excedente» |
+| Registro de lotes con ingreso, consumo preferente o vencimiento | Tipo y fecha del alimento + fecha de ingreso por lote | Paso «Fechas del lote»; inventario |
+| Inventario ordenado por ingreso (PEPS) | Orden PEPS u orden por fecha límite; existencias disponibles/publicadas | `/panel/inventario` |
+| Alertas preventivas según la vida útil | Anticipación configurable por lote (30 min a 24 h); tarjeta «A tiempo de aprovechar» y contador en el menú | `/panel` |
+| Gestión de descuentos | Editar precio con descuento en vivo; pausar/reactivar; las reservas conservan su precio | Inventario → editar precio |
+| Consulta de ofertas por zona o ubicación registrada | Filtros por zona, categoría, búsqueda, orden y «próximas a su límite»; directorio de locales por zona | `/ofertas`, `/establecimientos` |
+| Reserva y confirmación manual del retiro | Reserva transaccional (sin sobre-reservas), código, cancelación; confirmación por el establecimiento | Detalle de oferta, `/mis-reservas`, `/panel/reservas` |
+| Historial de publicaciones, reservas, entregas y cancelaciones | Movimientos persistentes con filtros, búsqueda, paginación y CSV | `/panel/historial`, `/admin/historial` |
+| Reportes de cantidades publicadas, reservadas y entregadas | Indicadores por unidad, proporción retirada, filtros y CSV | `/panel/indicadores`, `/admin` |
+| Pruebas funcionales | Dominio (`npm test`), reglas SQL (`npm run test:db`), recorridos y accesibilidad (`npm run test:e2e`) | `tests/` |
+| Piloto con voluntarios | Protocolo preparado; sin resultados inventados | `docs/protocolo-piloto.md` |
 
 ## Actores y recorrido
 
@@ -59,7 +59,9 @@ erDiagram
   USUARIO }o--o{ ESTABLECIMIENTO : gestiona
 ```
 
-Lote, oferta, reserva y movimiento ya están representados por tipos TypeScript. Usuario y su relación con los establecimientos son parte del diseño futuro y todavía no se implementan como cuentas reales.
+Todas las entidades están en Supabase (`supabase/migrations`). Cada cuenta de establecimiento gestiona un único local; la administración puede revisar cualquiera.
+
+- **Usuario:** nombre, correo, teléfono, rol, establecimiento (solo para el rol establecimiento) y contraseña cifrada.
 
 - **Establecimiento:** tipo, zona y dirección de retiro.
 - **Lote:** alimento, descripción, categoría, unidad, cantidad inicial/disponible, ingreso, tipo y fecha alimentaria, límite comercial, ventana de retiro, anticipación de alerta y declaración del oferente.

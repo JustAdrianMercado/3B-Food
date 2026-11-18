@@ -5,16 +5,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence } from "motion/react";
-import { Activity, ArrowUpRight, BarChart3, Bell, CheckCheck, ChevronRight, Clock3, Download, LayoutDashboard, Leaf, Mail, Package, Pause, Pencil, Play, Plus, ShoppingBag, Sprout, Store, type LucideIcon } from "lucide-react";
-import { dateLabel, getMetrics, getOfferViews, localDate, lotUrgency, number, offerStatus, remainingLabel, reportCsv, timeLabel, type SiteState, type Offer, type OfferView, type Unit } from "@/lib/domain";
+import { Activity, ArrowUpRight, BarChart3, Bell, CheckCheck, ChevronRight, Clock3, Download, History, LayoutDashboard, Leaf, Mail, Package, Pause, Pencil, Play, Plus, Search, ShoppingBag, Sprout, Store, Users, type LucideIcon } from "lucide-react";
+import { amountLabel, dateLabel, getMetrics, getOfferViews, localDate, lotUrgency, number, offerStatus, remainingLabel, reportCsv, timeLabel, type Movement, type SiteState, type Offer, type OfferView, type Unit } from "@/lib/domain";
 import { downloadText, cn } from "@/lib/utils";
 import { useData } from "./data-provider";
 import { PriceDialog, PublishLotDialog } from "./management-forms";
 import { ReservationList } from "./reservations";
-import { PageHeading } from "./ui";
+import { PageHeading, Pagination } from "./ui";
 import { EmptyState } from "./empty-state";
 
-type Section = "overview" | "inventory" | "reservations" | "reports";
+type Section = "overview" | "inventory" | "reservations" | "history" | "reports";
 
 export function Stat({ label, value, caption, icon: Icon, accent = false }: { label: string; value: number | string; caption: string; icon: LucideIcon; accent?: boolean }) {
   return <div className={cn("stat-card", accent && "stat-card--accent")}><div className="stat-top"><span>{label}</span><span className="stat-icon"><Icon size={16} strokeWidth={1.7} /></span></div><strong>{value}</strong><small>{caption}</small></div>;
@@ -37,9 +37,15 @@ function InventoryStatus({ view }: { view: OfferView }) {
 function InventoryPanel({ onPrice, limit }: { onPrice: (offer: Offer) => void; limit?: number }) {
   const { state, now, execute, notify } = useData();
   const [sort, setSort] = useState<"limit" | "peps">("limit");
-  const views = useMemo(() => !state ? [] : getOfferViews(state).filter((view) => view.establishment.id === state.selectedEstablishmentId).sort((a, b) => Date.parse(sort === "peps" ? a.lot.entryAt : a.lot.commercializationEndsAt) - Date.parse(sort === "peps" ? b.lot.entryAt : b.lot.commercializationEndsAt)), [state, sort]);
+  // Lots still on sale come first; finished ones stay at the end for traceability.
+  const views = useMemo(() => !state ? [] : getOfferViews(state).filter((view) => view.establishment.id === state.selectedEstablishmentId).sort((a, b) => {
+    const ended = Number(offerStatus(a.offer, a.lot, now) === "Finalizada") - Number(offerStatus(b.offer, b.lot, now) === "Finalizada");
+    if (ended) return ended;
+    const key = (view: OfferView) => Date.parse(sort === "peps" ? view.lot.entryAt : view.lot.commercializationEndsAt);
+    return ended === 0 && offerStatus(a.offer, a.lot, now) === "Finalizada" ? key(b) - key(a) : key(a) - key(b);
+  }), [state, sort, now]);
   if (!state) return null;
-  const visible = limit ? views.slice(0, limit) : views;
+  const visible = limit ? views.filter((view) => offerStatus(view.offer, view.lot, now) !== "Finalizada").slice(0, limit) : views;
   const toggle = async (offer: Offer) => { const result = await execute({ type: "toggle-offer", offerId: offer.id }); if (result.ok) notify(offer.paused ? "La oferta vuelve a estar visible si conserva plazo y existencias." : "Oferta pausada. Las reservas existentes se conservan."); };
   const actions = (view: OfferView) => {
     const ended = offerStatus(view.offer, view.lot, now) === "Finalizada";
@@ -89,6 +95,47 @@ export function ReportPanel({ global = false }: { global?: boolean }) {
   </>;
 }
 
+const MOVEMENT_TYPES: Movement["type"][] = ["Publicación", "Reserva", "Retiro", "Cancelación", "Plazo finalizado", "Cambio de precio"];
+const movementClass = (type: Movement["type"]) => type === "Retiro" ? "status-green" : type === "Reserva" || type === "Publicación" ? "status-amber" : "status-neutral";
+
+/** Full operation history with type filter, search and pagination. */
+export function HistoryPanel({ global = false }: { global?: boolean }) {
+  const { state } = useData();
+  const [type, setType] = useState<Movement["type"] | "all">("all");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  if (!state) return null;
+  const normalize = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("es");
+  const search = normalize(query.trim());
+  const rows = state.movements.flatMap((movement) => {
+    const lot = state.lots.find((item) => item.id === movement.lotId);
+    if (!lot || (!global && lot.establishmentId !== state.selectedEstablishmentId)) return [];
+    const establishment = state.establishments.find((item) => item.id === lot.establishmentId);
+    return [{ movement, lot, establishment }];
+  });
+  const counts = Object.fromEntries(MOVEMENT_TYPES.map((item) => [item, rows.filter((row) => row.movement.type === item).length]));
+  const visible = rows.filter((row) => (type === "all" || row.movement.type === type) && (!search || normalize(`${row.lot.name} ${row.movement.detail} ${row.establishment?.name ?? ""}`).includes(search)));
+  const pageSize = 12;
+  const pages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const current = Math.min(page, pages);
+  const slice = visible.slice((current - 1) * pageSize, current * pageSize);
+  const exportHistory = () => {
+    const escape = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+    const csv = "﻿" + [["Fecha", "Hora", "Tipo", "Producto", "Establecimiento", "Cantidad", "Unidad", "Detalle"], ...visible.map(({ movement, lot, establishment }) => [localDate(Date.parse(movement.createdAt)), timeLabel(movement.createdAt), movement.type, lot.name, establishment?.name ?? "", movement.quantity, lot.unit, movement.detail])].map((row) => row.map(escape).join(";")).join("\r\n");
+    downloadText(csv, `ecorescate-historial-${localDate()}.csv`);
+  };
+  return <section className="panel">
+    <div className="panel-heading"><div><h2>Historial de operaciones</h2><p>Publicaciones, reservas, retiros, cancelaciones y cambios de precio.</p></div><button className="btn btn-secondary btn-small" onClick={exportHistory}><Download size={14} />Exportar CSV</button></div>
+    <div className="filter-chips" role="group" aria-label="Filtrar por tipo de operación"><button className={cn("chip", type === "all" && "chip--selected")} aria-pressed={type === "all"} onClick={() => { setType("all"); setPage(1); }}>Todas · {rows.length}</button>{MOVEMENT_TYPES.filter((item) => counts[item]).map((item) => <button key={item} className={cn("chip", type === item && "chip--selected")} aria-pressed={type === item} onClick={() => { setType(item); setPage(1); }}>{item} · {counts[item]}</button>)}</div>
+    <label className="search-field mb-5"><Search size={17} /><span className="sr-only">Buscar en el historial</span><input type="search" placeholder={global ? "Busca un producto, local o código…" : "Busca un producto o código de reserva…"} value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /></label>
+    {slice.length ? <>
+      <div className="table-wrap inventory-table"><table className="data-table"><caption className="sr-only">Historial de operaciones</caption><thead><tr><th>Fecha</th><th>Operación</th><th>Producto</th>{global && <th>Establecimiento</th>}<th>Cantidad</th><th>Detalle</th></tr></thead><tbody>{slice.map(({ movement, lot, establishment }) => <tr key={movement.id}><td><strong>{dateLabel(movement.createdAt)}</strong><small>{timeLabel(movement.createdAt)}</small></td><td><span className={`status-pill ${movementClass(movement.type)}`}>{movement.type}</span></td><td><strong>{lot.name}</strong></td>{global && <td>{establishment?.name}</td>}<td>{movement.type === "Cambio de precio" ? "—" : amountLabel(movement.quantity, lot.unit)}</td><td className="history-detail">{movement.detail}</td></tr>)}</tbody></table></div>
+      <div className="record-cards">{slice.map(({ movement, lot, establishment }) => <article key={movement.id} className="record-card"><div className="record-header"><div><h3>{lot.name}</h3><small>{dateLabel(movement.createdAt)} · {timeLabel(movement.createdAt)}{global && establishment ? ` · ${establishment.name}` : ""}</small></div><span className={`status-pill ${movementClass(movement.type)}`}>{movement.type}</span></div><p className="history-detail">{movement.type === "Cambio de precio" ? "" : `${amountLabel(movement.quantity, lot.unit)} · `}{movement.detail}</p></article>)}</div>
+    </> : <EmptyState icon={Activity} title="No hay operaciones con ese filtro" description="Prueba con otro tipo de operación o borra la búsqueda." />}
+    <Pagination page={current} pages={pages} onChange={setPage} label="Páginas del historial" />
+  </section>;
+}
+
 export function BusinessWorkspace({ section }: { section: Section }) {
   const pathname = usePathname();
   const { state, now, ready, execute } = useData();
@@ -96,19 +143,24 @@ export function BusinessWorkspace({ section }: { section: Section }) {
   const [priceOffer, setPriceOffer] = useState<Offer | null>(null);
   const establishment = state?.establishments.find((item) => item.id === state.selectedEstablishmentId) ?? state?.establishments[0];
   if (!state || !establishment) return <div className="container page-section"><EmptyState icon={Store} title="Todavía no hay establecimientos registrados" description="Cuando se registre un establecimiento podrás gestionar aquí sus lotes, ofertas y reservas." /></div>;
-  const nav = [{ href: "/panel", label: "Vista general", icon: LayoutDashboard }, { href: "/panel/inventario", label: "Inventario y ofertas", icon: Package }, { href: "/panel/reservas", label: "Reservas y retiros", icon: ShoppingBag }, { href: "/panel/indicadores", label: "Mis indicadores", icon: BarChart3 }];
+  const admin = state.viewer?.role === "administrador";
+  const alerts = getOfferViews(state).filter((view) => view.establishment.id === establishment.id && offerStatus(view.offer, view.lot, now) === "Disponible" && lotUrgency(view.lot, now) === "pronto").length;
+  const pendingPickups = state.reservations.filter((item) => item.status === "Reservada" && state.offers.some((offer) => offer.id === item.offerId && state.lots.some((lot) => lot.id === offer.lotId && lot.establishmentId === establishment.id))).length;
+  const nav = [{ href: "/panel", label: "Vista general", icon: LayoutDashboard, count: alerts }, { href: "/panel/inventario", label: "Inventario y ofertas", icon: Package, count: 0 }, { href: "/panel/reservas", label: "Reservas y retiros", icon: ShoppingBag, count: pendingPickups }, { href: "/panel/historial", label: "Historial", icon: History, count: 0 }, { href: "/panel/indicadores", label: "Mis indicadores", icon: BarChart3, count: 0 }];
   const titles: Record<Section, { title: string; description: string }> = {
     overview: { title: "Un buen día para aprovechar.", description: "Un espacio para organizar tus excedentes y darles una nueva oportunidad." },
     inventory: { title: "Cada lote, a su tiempo.", description: "Identifica tus excedentes y organiza el inventario por ingreso o límite comercial." },
     reservations: { title: "Del código, a la entrega.", description: "Consulta reservas y confirma manualmente el retiro en tu establecimiento." },
+    history: { title: "Todo queda registrado.", description: "El historial de publicaciones, reservas, entregas y cancelaciones de tu establecimiento." },
     reports: { title: "Una historia que podemos medir.", description: "Consulta las operaciones y las cantidades de cada unidad por separado." },
   };
-  return <div className="dashboard-shell"><aside className="dashboard-sidebar"><div><p className="sidebar-eyebrow">ESPACIO DEL ESTABLECIMIENTO</p><div className="establishment-switcher"><label htmlFor="business-select">Establecimiento</label><select id="business-select" value={establishment.id} onChange={(event) => { void execute({ type: "select-establishment", establishmentId: event.target.value }); }}>{(state?.establishments ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div></div><nav className="sidebar-nav" aria-label="Panel del establecimiento">{nav.map((item) => <Link key={item.href} href={item.href} className={pathname === item.href ? "active" : ""}><item.icon size={17} strokeWidth={1.7} />{item.label}</Link>)}</nav><div className="sidebar-guide"><Sprout size={26} strokeWidth={1.5} /><h3>El tiempo importa.</h3><p>Revisa los lotes próximos a su límite y ofrece una oportunidad mientras todavía sea posible.</p><Link href={`/establecimientos/${establishment.slug}`}>Ver mi página pública<ArrowUpRight size={13} /></Link></div></aside><div className="dashboard-main"><div className="dashboard-demo-line"><span>{ready ? `${establishment.zone} · ${dateLabel(new Date(now).toISOString(), { weekday: "long" })}` : "Cochabamba"}</span></div><div className="dashboard-heading"><PageHeading eyebrow={`${establishment.name.toUpperCase()} · ${establishment.type.toUpperCase()}`} title={titles[section].title} description={titles[section].description} action={<button className="btn btn-primary" onClick={() => setPublishOpen(true)} disabled={!ready}><Plus size={17} />Publicar excedente</button>} /></div>{!state ? <div className="skeleton" style={{ height: 260 }} aria-busy="true" /> : section === "overview" ? <Overview onPrice={setPriceOffer} /> : section === "inventory" ? <InventoryPanel onPrice={setPriceOffer} /> : section === "reservations" ? <ReservationList business /> : <ReportPanel />}</div><AnimatePresence>{publishOpen && <PublishLotDialog establishmentId={establishment.id} onClose={() => setPublishOpen(false)} />}{priceOffer && <PriceDialog offer={priceOffer} onClose={() => setPriceOffer(null)} />}</AnimatePresence></div>;
+  return <div className="dashboard-shell"><aside className="dashboard-sidebar"><div><p className="sidebar-eyebrow">{admin ? "VISTA DE ADMINISTRACIÓN" : "ESPACIO DEL ESTABLECIMIENTO"}</p>{admin ? <div className="establishment-switcher"><label htmlFor="business-select">Establecimiento</label><select id="business-select" value={establishment.id} onChange={(event) => { void execute({ type: "select-establishment", establishmentId: event.target.value }); }}>{(state?.establishments ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div> : <div className="sidebar-business"><span className="vendor-avatar vendor-avatar--large" style={{ backgroundColor: establishment.color }}>{establishment.initials}</span><span><b>{establishment.name}</b><small>{establishment.type} · {establishment.zone}</small></span></div>}</div><nav className="sidebar-nav" aria-label="Panel del establecimiento">{nav.map((item) => <Link key={item.href} href={item.href} className={pathname === item.href ? "active" : ""} aria-current={pathname === item.href ? "page" : undefined}><item.icon size={17} strokeWidth={1.7} />{item.label}{item.count > 0 && <span className="nav-count">{item.count}<span className="sr-only"> pendientes</span></span>}</Link>)}</nav><div className="sidebar-guide"><Sprout size={26} strokeWidth={1.5} /><h3>El tiempo importa.</h3><p>Revisa los lotes próximos a su límite y ofrece una oportunidad mientras todavía sea posible.</p><Link href={`/establecimientos/${establishment.slug}`}>Ver mi página pública<ArrowUpRight size={13} /></Link></div></aside><div className="dashboard-main"><div className="dashboard-demo-line"><span>{ready ? `${establishment.zone} · ${dateLabel(new Date(now).toISOString(), { weekday: "long" })}` : "Cochabamba"}</span></div><div className="dashboard-heading"><PageHeading eyebrow={`${establishment.name.toUpperCase()} · ${establishment.type.toUpperCase()}`} title={titles[section].title} description={titles[section].description} action={<button className="btn btn-primary" onClick={() => setPublishOpen(true)} disabled={!ready}><Plus size={17} />Publicar excedente</button>} /></div>{!state ? <div className="skeleton" style={{ height: 260 }} aria-busy="true" /> : section === "overview" ? <Overview onPrice={setPriceOffer} /> : section === "inventory" ? <InventoryPanel onPrice={setPriceOffer} /> : section === "reservations" ? <ReservationList business /> : section === "history" ? <HistoryPanel /> : <ReportPanel />}</div><AnimatePresence>{publishOpen && <PublishLotDialog establishmentId={establishment.id} onClose={() => setPublishOpen(false)} />}{priceOffer && <PriceDialog offer={priceOffer} onClose={() => setPriceOffer(null)} />}</AnimatePresence></div>;
 }
 
 const adminNav = [
   { href: "/admin", label: "Indicadores globales", icon: BarChart3 },
-  { href: "/admin/solicitudes", label: "Solicitudes de negocios", icon: Store },
+  { href: "/admin/historial", label: "Historial global", icon: History },
+  { href: "/admin/usuarios", label: "Usuarios y roles", icon: Users },
   { href: "/admin/mensajes", label: "Mensajes de contacto", icon: Mail },
 ];
 

@@ -25,7 +25,7 @@ const features = [
 
 export default function Page() {
   return <div className="container content-page">
-    <PageHeading eyebrow="PARA RESTAURANTES Y SUPERMERCADOS" title="Tu excedente puede ser el buen plan de alguien más." description="EcoRescate te ayuda a identificar a tiempo los alimentos que podrías perder, publicarlos con descuento y entregarlos en tu propio local." action={<Link className="btn btn-primary" href="/negocios/unirse">Quiero unirme<ArrowUpRight size={16} /></Link>} />
+    <PageHeading eyebrow="PARA RESTAURANTES Y SUPERMERCADOS" title="Tu excedente puede ser el buen plan de alguien más." description="EcoRescate te ayuda a identificar a tiempo los alimentos que podrías perder, publicarlos con descuento y entregarlos en tu propio local." action={<Link className="btn btn-primary" href="/negocios/unirse">Registrar mi negocio<ArrowUpRight size={16} /></Link>} />
     <section className="content-section"><div className="scope-grid">{benefits.map((item) => <article className="scope-card" key={item.index}><item.icon size={29} strokeWidth={1.4} /><span className="eyebrow">{item.index}</span><h3>{item.title}</h3><p>{item.text}</p></article>)}</div></section>
     <section className="content-section"><h2>Todo lo que necesitas en un panel.</h2><p>Un solo lugar para organizar tus excedentes, desde el registro del lote hasta la entrega.</p><div className="scope-list">{features.map((item) => <div key={item.title}><item.icon size={21} strokeWidth={1.6} /><div><b>{item.title}</b><p>{item.text}</p></div></div>)}</div></section>
     <section className="content-section"><div className="policy-box"><h3>Condiciones para publicar</h3><ul>
