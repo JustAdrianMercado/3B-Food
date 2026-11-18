@@ -21,7 +21,7 @@ const groups = [
   { id: "negocios", title: "Para establecimientos", items: [
     { q: "¿Cómo registro mi establecimiento?", a: "Desde «Registrar mi negocio»: en tres pasos cortos indicas los datos del local, tu horario y tu cuenta. Al terminar entras a tu panel y puedes publicar tu primera oferta." },
     { q: "¿Qué puedo publicar?", a: "Alimentos aptos para el consumo que no alcanzarás a vender en tu horario habitual. No se permiten productos vencidos, en mal estado ni ofertas cuyo plazo comercial ya terminó." },
-    { q: "¿Cómo se definen las alertas?", a: "Al registrar un lote eliges con cuánta anticipación quieres el aviso, de 30 minutos a 24 horas, según la vida útil del alimento. Los avisos aparecen en tu panel." },
+    { q: "¿Cómo se definen las alertas?", a: "Al publicar un excedente eliges con cuánta anticipación quieres el aviso, de 30 minutos a 24 horas, según la vida útil del alimento. Los avisos aparecen en tu panel." },
     { q: "¿Puedo cambiar el precio de una oferta?", a: "Sí. Puedes modificar el precio o pausar la oferta mientras siga vigente. Las reservas que ya existían conservan el precio con el que se hicieron." },
     { q: "¿Cómo confirmo una entrega?", a: "Desde «Reservas y retiros» en tu panel: verifica el código con la persona que retira y confirma la entrega dentro del horario." },
     { q: "¿EcoRescate cobra comisión o procesa pagos?", a: "EcoRescate no procesa pagos. El cobro se acuerda directamente entre tu establecimiento y la persona que retira." },

@@ -24,7 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
     <section className="auth-card">
       <span className="eyebrow">TU CUENTA ECORESCATE</span>
       <h1>Qué bueno verte de nuevo.</h1>
-      <p className="auth-lead">Ingresa para reservar ofertas o, si tienes un negocio, para gestionar tus lotes y entregas.</p>
+      <p className="auth-lead">Ingresa para reservar ofertas o, si tienes un negocio, para gestionar tus ofertas y entregas.</p>
       {viewer && access ? <div className="auth-notice" role="status">
         <ShieldCheck size={20} />
         <div><b>Esta sección requiere {required[access]}.</b><p>Ingresaste como <strong>{viewer.name}</strong> ({roleLabel[viewer.role]}). Cierra sesión para ingresar con otra cuenta.</p>

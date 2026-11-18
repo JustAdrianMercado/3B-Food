@@ -24,16 +24,16 @@ Otros locales: `cocinadebarrio@`, `mercadoverde@`, `mesarecoleta@`, `cafeelprado
 
 Mostrar el inicio y el catálogo.
 
-> El informe identifica tres dificultades en restaurantes y supermercados de Cochabamba: se reconocen tarde los excedentes, el inventario se registra y rota de forma inadecuada y la comunicación con los consumidores llega tarde. EcoRescate es una solución web responsiva que conecta la gestión de lotes con la publicación, la reserva y la entrega de excedentes aptos para el consumo.
+> El informe identifica tres dificultades en restaurantes y supermercados de Cochabamba: se reconocen tarde los excedentes, el inventario se registra y rota de forma inadecuada y la comunicación con los consumidores llega tarde. EcoRescate es una solución web responsiva que conecta el inventario de excedentes con su publicación, reserva y entrega, cuando todavía son aptos para el consumo.
 
 Mostrar: filtros por categoría y **zona**, búsqueda, «Solo próximas a su límite», detalle de una oferta (precio, descuento, horario de retiro, dirección, tipo de fecha, aptitud declarada por el local).
 
 ## Integrante 2 · Roles, establecimiento y cliente · 1:30–5:00
 
 1. **Registro y autenticación con perfiles.** Sin sesión, pulsar «Reservar»: el sistema pide ingresar. Mostrar `/registro` (cliente: 3 datos) y `/negocios/unirse` (negocio: asistente de 3 pasos). Explicar que cada rol solo ve su espacio: una clienta que abre `/panel` recibe el aviso «Esta sección requiere una cuenta de establecimiento».
-2. **Panel del establecimiento** (La Espiga): tarjetas de ofertas vigentes, **alertas preventivas** («A tiempo de aprovechar», con la anticipación que define cada lote) y contadores en el menú.
+2. **Panel del establecimiento** (La Espiga): tarjetas de ofertas vigentes, **alertas preventivas** («A tiempo de aprovechar», con la anticipación que define cada oferta) y contadores en el menú.
 3. **Inventario:** alternar «PEPS · Ingreso» y «Fecha límite». Pausar y reactivar una oferta. **Editar precio:** el descuento se recalcula en vivo y las reservas existentes conservan su precio.
-4. **Publicar excedente** en 5 pasos cortos: Producto → Cantidad y precio (muestra el % de descuento) → Retiro (tiempo límite) → Fechas del lote (tipo de fecha e ingreso PEPS) → Revisar y declarar aptitud.
+4. **Publicar excedente** en 5 pasos cortos: Producto → Cantidad y precio (muestra el % de descuento) → Retiro (tiempo límite) → Fechas (vencimiento o consumo preferente, e ingreso para el orden PEPS) → Revisar y declarar aptitud. En esta versión, registrar el producto en el inventario y publicarlo se hacen en el mismo formulario.
 5. **Cliente** (Ana): buscar la oferta publicada, reservar, mostrar el código y «Mis reservas».
 
 > El precio lo fija el establecimiento. La reserva descuenta existencias en una transacción de la base de datos, así que dos personas no pueden reservar la última unidad a la vez. El retiro es presencial y el pago se acuerda en el local.

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useData } from "./data-provider";
 import { Dialog, Stepper } from "./ui";
 
-const PUBLISH_STEPS = ["Producto", "Cantidad y precio", "Retiro", "Fechas del lote", "Revisar"] as const;
+const PUBLISH_STEPS = ["Producto", "Cantidad y precio", "Retiro", "Fechas", "Revisar"] as const;
 const ALERT_OPTIONS = [{ value: "30", label: "30 minutos antes" }, { value: "60", label: "1 hora antes" }, { value: "120", label: "2 horas antes" }, { value: "360", label: "6 horas antes" }, { value: "1440", label: "24 horas antes" }];
 const DATE_TYPES: { value: Lot["dateType"]; help: string }[] = [
   { value: "Límite de oferta", help: "Preparaciones del día: se ofrecen solo hoy." },
@@ -71,7 +71,7 @@ export function PublishLotDialog({ establishmentId, onClose }: { establishmentId
         alertMinutes: Number(draft.alertMinutes), suitabilityDeclared: draft.suitability,
       } });
       if (!result.ok) { setError(result.message); return; }
-      notify("Lote registrado y oferta publicada. Ya aparece en el catálogo.");
+      notify("Oferta publicada. Ya aparece en el catálogo y en tu inventario.");
       onClose();
     } catch (caught) { setError(caught instanceof DomainError ? caught.message : "Revisa los datos y las fechas antes de publicar."); }
     finally { setBusy(false); }
@@ -85,10 +85,10 @@ export function PublishLotDialog({ establishmentId, onClose }: { establishmentId
     ["Precio", `${money(price || 0)} (antes ${money(regular || 0)})${off !== null ? ` · −${off}%` : ""}`],
     ["Retiro", `${day(draft.pickupStart.slice(0, 10))}, ${draft.pickupStart.slice(11)} a ${sameDay ? "" : `${day(draft.pickupEnd.slice(0, 10))}, `}${draft.pickupEnd.slice(11)}`],
     ["Alerta", ALERT_OPTIONS.find((item) => item.value === draft.alertMinutes)?.label ?? ""],
-    ["Lote", `Ingreso ${day(draft.entryDate)} · ${draft.dateType} ${day(draft.foodDate)}`],
+    ["Fechas", `Ingreso ${day(draft.entryDate)} · ${draft.dateType} ${day(draft.foodDate)}`],
   ];
 
-  return <Dialog title="Publicar un excedente" description="Registra el lote y publícalo en el catálogo. Horarios de Cochabamba (UTC−4)." onClose={onClose} wide>
+  return <Dialog title="Publicar un excedente" description="Completa los datos del excedente y publícalo en el catálogo. Horarios de Cochabamba (UTC−4)." onClose={onClose} wide>
     <Stepper steps={PUBLISH_STEPS} current={step} onSelect={(index) => { setError(""); setStep(index); }} label="Pasos para publicar" />
     <p className="stepper-caption">Paso {step + 1} de {PUBLISH_STEPS.length} · <b>{PUBLISH_STEPS[step]}</b></p>
     <form onSubmit={submit}>
