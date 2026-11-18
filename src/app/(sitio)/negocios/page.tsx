@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, BarChart3, Bell, ClipboardList, PackageSearch, Percent, ShoppingBag, Store } from "lucide-react";
+import { ArrowUpRight, BarChart3, Bell, ClipboardList, FileSpreadsheet, PackageSearch, Percent, ShoppingBag, Store } from "lucide-react";
 import { PageHeading } from "@/components/ui";
 
 export const metadata: Metadata = {
@@ -21,6 +21,7 @@ const features = [
   { icon: ShoppingBag, title: "Reservas y retiros", text: "Consulta las reservas por código y confirma manualmente cada entrega dentro del horario de retiro." },
   { icon: ClipboardList, title: "Historial completo", text: "Cada publicación, reserva, retiro, cancelación y cambio de precio queda registrado." },
   { icon: BarChart3, title: "Indicadores", text: "Cantidades publicadas, reservadas y retiradas por unidad de medida, con exportación a CSV." },
+  { icon: FileSpreadsheet, title: "Registro de lotes desde Excel · Próximamente", text: "Pronto podrás subir tu planilla y registrar varios lotes a la vez, con sus fechas de ingreso y de vencimiento." },
 ];
 
 export default function Page() {

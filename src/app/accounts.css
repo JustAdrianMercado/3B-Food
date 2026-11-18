@@ -91,7 +91,27 @@
 .pagination [aria-disabled="true"] { opacity: .45; pointer-events: none; }
 .stats-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
+/* Coming soon: bulk lot registration from a spreadsheet */
+.heading-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.soon-pill { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; background: #f6e7c9; color: #6f4a12; font-size: 11px; font-weight: 700; letter-spacing: .2px; white-space: nowrap; }
+.btn-soon:disabled { cursor: not-allowed; opacity: 1; color: #55624a; border-color: #d8ddd0; background: #f4f5ef; }
+.btn-soon:disabled:hover { transform: none; }
+.soon-card { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; border-style: dashed; border-color: #cdd6bf; background: #fbfbf6; }
+.soon-icon { display: grid; place-items: center; flex-shrink: 0; width: 56px; height: 56px; border-radius: 14px; background: #e9f0df; color: var(--forest); }
+.soon-body { flex: 1; min-width: 0; }
+.soon-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.soon-heading h2 { font-size: 16px; font-weight: 600; color: var(--ink); }
+.soon-body p { margin-top: 6px; font-size: 13px; line-height: 1.7; color: #4d6735; max-width: 720px; }
+.template-columns { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 12px 0 0; padding: 0; }
+.template-columns li { padding: 4px 10px; border: 1px solid #dce3d1; border-radius: 6px; background: #fff; font-size: 12px; color: #3f5131; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+
 @media (max-width: 900px) { .auth-page { grid-template-columns: 1fr; padding-block: 34px 50px; } }
+@media (max-width: 767px) {
+  .heading-actions { width: 100%; justify-content: stretch; }
+  .heading-actions .btn { flex: 1 1 100%; }
+  .soon-card { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .soon-card .btn { width: 100%; }
+}
 /* On narrow phones the account lives in the menu (name, links and sign-out), so the header fits. */
 @media (max-width: 480px) { .header-actions .account-menu { display: none; } }
 @media (max-width: 767px) {

@@ -16,7 +16,7 @@ Fuente de alcance: **Informe Segundo Entregable**, septiembre de 2026, apartados
 | --- | --- | --- |
 | Registro y autenticación que diferencie establecimientos, consumidores y administradores | Cuentas con rol (`consumidor`, `establecimiento`, `administrador`), contraseñas scrypt, sesión en cookie `httpOnly`, guardas por rol en servidor | `/registro`, `/negocios/unirse`, `/ingresar`, menú de cuenta; `/admin/usuarios` |
 | Publicación con nombre, descripción, cantidad, precio, condiciones de entrega y tiempo límite | Asistente de 5 pasos con validación por paso y en servidor | Panel → «Publicar excedente» |
-| Registro de lotes con ingreso, consumo preferente o vencimiento | Tipo y fecha del alimento + fecha de ingreso por lote | Paso «Fechas del lote»; inventario |
+| Registro de lotes con ingreso, consumo preferente o vencimiento | Cada excedente publicado guarda tipo y fecha del alimento y fecha de ingreso. Registro masivo desde Excel anunciado como «Próximamente» (no habilitado) | Paso «Fechas»; inventario; botón «Registrar lotes (Excel)» |
 | Inventario ordenado por ingreso (PEPS) | Orden PEPS u orden por fecha límite; existencias disponibles/publicadas | `/panel/inventario` |
 | Alertas preventivas según la vida útil | Anticipación configurable por lote (30 min a 24 h); tarjeta «A tiempo de aprovechar» y contador en el menú | `/panel` |
 | Gestión de descuentos | Editar precio con descuento en vivo; pausar/reactivar; las reservas conservan su precio | Inventario → editar precio |
